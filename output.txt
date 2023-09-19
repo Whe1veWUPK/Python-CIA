@@ -1,0 +1,6607 @@
+Module
+Expr :
+Constant : 
+DDNS Lambda Python3 Script
+
+This script will perform the following functions.
+
+if no CNAME or ZONE tags is set on the ec2 instance, and not using a custom dhcp option set:
+1. Script will do nothing
+
+if no CNAME or ZONE tags are set, but are using a custom dhcp option set with
+a hosted zone created, which matches the domain name.
+1. An 'A' record is created to the IP
+2. A 'PTR" record is create to the DNS name
+
+if a CNAME tag is set.
+1. Creates a CNAME to the DNS name
+2. Creates a PTR record to the CNAME
+
+if a ZONE tag is set.
+1. Creates an 'A' record to the IP
+2. Creates a 'PTR" record to the DNS name
+
+Import :
+Alias : json
+Import :
+Alias : sys
+Import :
+Alias : datetime
+Import :
+Alias : random
+Import :
+Alias : logging
+Import :
+Alias : re
+Import :
+Alias : uuid
+Import :
+Alias : time
+Import :
+Alias : inspect
+Import :
+Alias : boto3
+ImportFrom : botocore.exceptions
+Alias : ClientError
+Assign :
+Name : LOGGER
+Call :
+Name : logging
+Load :
+Attribute : getLogger
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : setLevel
+Name : logging
+Load :
+Attribute : INFO
+Assign :
+Name : ACCOUNT
+Constant : None
+Assign :
+Name : REGION
+Constant : None
+Assign :
+Name : SNS_CLIENT
+Constant : None
+Expr :
+Call :
+Name : print
+BinOp :
+Constant : Loading function 
+Add :
+Call :
+Call :
+Call :
+Name : datetime
+Load :
+Attribute : datetime
+Load :
+Attribute : now
+Load :
+Attribute : time
+Load :
+Attribute : isoformat
+FunctionDef : lineno
+arguments :
+Expr :
+Constant : 
+    Returns the current line number in our script
+    :return:
+    
+Return :
+Call :
+Name : str
+BinOp :
+Constant :  - line number: 
+Add :
+Call :
+Name : str
+Call :
+Name : inspect
+Load :
+Attribute : currentframe
+Load :
+Attribute : f_back
+Load :
+Attribute : f_lineno
+EndFunction :
+FunctionDef : get_sns_client
+arguments :
+Expr :
+Constant : 
+    Get sns client
+    :return:
+    
+Try :
+Return :
+Call :
+Name : boto3
+Load :
+Attribute : client
+Constant : sns
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : print
+BinOp :
+Constant : Unexpected error: %s
+Mod :
+Name : err
+EndFunction :
+FunctionDef : get_route53_client
+arguments :
+Expr :
+Constant : 
+    Get route53 client
+    :return:
+    
+Try :
+Return :
+Call :
+Name : boto3
+Load :
+Attribute : client
+Constant : route53
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : print
+BinOp :
+Constant : Unexpected error: %s
+Mod :
+Name : err
+EndFunction :
+FunctionDef : get_ec2_client
+arguments :
+Expr :
+Constant : 
+    Get ec2 client
+    :return:
+    
+Try :
+Return :
+Call :
+Name : boto3
+Load :
+Attribute : client
+Constant : ec2
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : print
+BinOp :
+Constant : Unexpected error: %s
+Mod :
+Name : err
+EndFunction :
+FunctionDef : get_dynamodb_client
+arguments :
+Expr :
+Constant : 
+    Get dynamodb client
+    :return:
+    
+Try :
+Return :
+Call :
+Name : boto3
+Load :
+Attribute : client
+Constant : dynamodb
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : print
+BinOp :
+Constant : Unexpected error: %s
+Mod :
+Name : err
+EndFunction :
+FunctionDef : lambda_handler
+arguments :
+arg : event
+arg : context
+arg : dynamodb_client
+arg : compute
+arg : route53
+arg : sns_client
+Call :
+Name : get_dynamodb_client
+Call :
+Name : get_ec2_client
+Call :
+Name : get_route53_client
+Call :
+Name : get_sns_client
+Expr :
+Constant : 
+    Check to see whether a DynamoDB table already exists.  If not, create it.
+    This table is used to keep a record of instances that have been created
+    along with their attributes.  This is necessary because when you terminate an instance
+    its attributes are no longer available, so they have to be fetched from the table.
+    :param event:
+    :param context:
+    :param dynamodb_client:
+    :param compute:
+    :param route53:
+    :param sns_client:
+    :return:
+    
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : event: %s
+BinOp :
+Call :
+Name : str
+Name : event
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : context: %s
+BinOp :
+Call :
+Name : str
+Name : context
+Add :
+Call :
+Name : lineno
+Assign :
+Name : SNS_CLIENT
+Name : sns_client
+Assign :
+Name : caller_response
+List : elts
+Load :
+Assign :
+Name : tables
+Call :
+Name : list_tables
+Name : dynamodb_client
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : tables: %s
+Call :
+Name : str
+Name : tables
+If :
+Compare :
+Constant : DDNS
+In :
+Subscript :
+Name : tables
+Constant : TableNames
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : DynamoDB table already exists
+Expr :
+Call :
+Name : create_table
+Name : dynamodb_client
+Constant : DDNS
+Assign :
+Name : state
+Subscript :
+Subscript :
+Name : event
+Constant : detail
+Load :
+Constant : state
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance state: %s
+BinOp :
+Call :
+Name : str
+Name : state
+Add :
+Call :
+Name : lineno
+Assign :
+Name : instance_id
+Subscript :
+Subscript :
+Name : event
+Constant : detail
+Load :
+Constant : instance-id
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance id: %s
+BinOp :
+Call :
+Name : str
+Name : instance_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : ACCOUNT
+Subscript :
+Name : event
+Constant : account
+Load :
+Assign :
+Name : region
+Subscript :
+Name : event
+Constant : region
+Load :
+Assign :
+Name : REGION
+Name : region
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : region: %s
+BinOp :
+Call :
+Name : str
+Name : region
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : sleeping for 60 seconds %s
+Call :
+Name : lineno
+If :
+Compare :
+Constant : pytest
+In :
+Name : sys
+Load :
+Attribute : modules
+Expr :
+Call :
+Name : time
+Load :
+Attribute : sleep
+Constant : 1
+Expr :
+Call :
+Name : time
+Load :
+Attribute : sleep
+Constant : 60
+Assign :
+Name : instance
+Call :
+Name : get_instances
+Name : compute
+Name : instance_id
+If :
+Compare :
+Constant : ResponseMetadata
+In :
+Name : instance
+Expr :
+Call :
+Name : instance
+Load :
+Attribute : pop
+Constant : ResponseMetadata
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance: %s
+BinOp :
+Call :
+Name : str
+Name : instance
+Add :
+Call :
+Name : lineno
+Assign :
+Name : instance
+Call :
+Name : remove_empty_from_dict
+Name : instance
+Assign :
+Name : instance_dump
+Call :
+Name : json
+Load :
+Attribute : dumps
+Name : instance
+keyword :
+Name : json_serial
+Assign :
+Name : instance_attributes
+Call :
+Name : json
+Load :
+Attribute : loads
+Name : instance_dump
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance_attributes: %s
+BinOp :
+Call :
+Name : str
+Name : instance_attributes
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : trying to put instance information in dynamo table %s
+BinOp :
+Call :
+Name : str
+Name : instance_attributes
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : put_item_in_dynamodb_table
+Name : dynamodb_client
+Constant : DDNS
+Name : instance_id
+Name : instance_attributes
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : done putting item in dynamo table %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Fetching instance information from dynamodb %s
+Call :
+Name : lineno
+Assign :
+Name : instance
+Call :
+Name : get_item_from_dynamodb_table
+Name : dynamodb_client
+Constant : DDNS
+Name : instance_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance: %s
+BinOp :
+Call :
+Name : str
+Name : instance
+Add :
+Call :
+Name : lineno
+Try :
+Assign :
+Name : tags
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : Tags
+Load :
+ExceptHandler :
+Assign :
+Name : tags
+List : elts
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : tags are: %s
+BinOp :
+Call :
+Name : str
+Name : tags
+Add :
+Call :
+Name : lineno
+Assign :
+Name : tag_type
+Call :
+Name : determine_tag_type
+Name : tags
+If :
+Compare :
+Name : tag_type
+Eq :
+Constant : invalid
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+Constant : Must have either CNAME or ZONE in tags, can not have both tags
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+UnaryOp :
+USub :
+Constant : 1
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Get instance attributes %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance: %s
+BinOp :
+Call :
+Name : str
+Name : instance
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : type: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : type
+Name : instance
+Add :
+Call :
+Name : lineno
+If :
+BoolOp :
+And :
+Name : instance
+Compare :
+Constant : Reservations
+In :
+Name : instance
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reservations: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reservations: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reservations: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reservations: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_ip
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : PrivateIpAddress
+Load :
+Assign :
+Name : private_dns_name
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : PrivateDnsName
+Load :
+Assign :
+Name : private_host_name
+Subscript :
+Call :
+Name : private_dns_name
+Load :
+Attribute : split
+Constant : .
+Constant : 0
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private ip: %s
+BinOp :
+Call :
+Name : str
+Name : private_ip
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_dns_name: %s
+BinOp :
+Call :
+Name : str
+Name : private_dns_name
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_host_name: %s
+BinOp :
+Call :
+Name : str
+Name : private_host_name
+Add :
+Call :
+Name : lineno
+Assign :
+Name : public_ip
+Constant : None
+Assign :
+Name : public_dns_name
+Constant : None
+If :
+Compare :
+Constant : PublicIpAddress
+In :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance has public ip address key
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instance: %s
+BinOp :
+Call :
+Name : str
+Name : instance
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Constant : Reservations
+In :
+Name : instance
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reservations: %s
+Call :
+Name : str
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+If :
+Compare :
+Constant : Instances
+In :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : instances: %s
+Call :
+Name : str
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Assign :
+Name : public_ip
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : PublicIpAddress
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : public_ip: %s
+BinOp :
+Call :
+Name : str
+Name : public_ip
+Add :
+Call :
+Name : lineno
+If :
+BoolOp :
+And :
+Name : public_ip
+Compare :
+Constant : PublicDnsName
+NotIn :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+Constant : Could not find PublicDnsName for public instance, check that vpc has dns hostnames enabled:
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+Assign :
+Name : public_dns_name
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : PublicDnsName
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : public_dns_name: %s
+BinOp :
+Call :
+Name : str
+Name : public_dns_name
+Add :
+Call :
+Name : lineno
+Assign :
+Name : public_host_name
+Subscript :
+Call :
+Name : public_dns_name
+Load :
+Attribute : split
+Constant : .
+Constant : 0
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : public_host_name: %s
+Call :
+Name : str
+Name : public_host_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Instance has no public IP or host name %s
+Call :
+Name : str
+Name : err
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Assign :
+Name : subnet_id
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : SubnetId
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : subnet_id: %s
+BinOp :
+Call :
+Name : str
+Name : subnet_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : cidr_block
+Call :
+Name : get_subnet_cidr_block
+Name : compute
+Name : subnet_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cidr_block: %s
+BinOp :
+Call :
+Name : str
+Name : cidr_block
+Add :
+Call :
+Name : lineno
+Assign :
+Name : subnet_mask
+Call :
+Name : int
+Subscript :
+Call :
+Name : cidr_block
+Load :
+Attribute : split
+Constant : /
+UnaryOp :
+USub :
+Constant : 1
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : subnet_mask: %s
+BinOp :
+Call :
+Name : str
+Name : subnet_mask
+Add :
+Call :
+Name : lineno
+Assign :
+Name : reversed_ip_address
+Call :
+Name : reverse_list
+Name : private_ip
+Assign :
+Name : reversed_domain_prefix
+Call :
+Name : get_reversed_domain_prefix
+Name : subnet_mask
+Name : private_ip
+Assign :
+Name : reversed_domain_prefix
+Call :
+Name : reverse_list
+Name : reversed_domain_prefix
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reversed_domain_prefix is: %s
+BinOp :
+Call :
+Name : str
+Name : reversed_domain_prefix
+Add :
+Call :
+Name : lineno
+Assign :
+Name : reversed_lookup_zone
+BinOp :
+Name : reversed_domain_prefix
+Add :
+Constant : in-addr.arpa.
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : The reverse lookup zone for this instance is: %s
+Call :
+Name : str
+Name : reversed_lookup_zone
+Assign :
+Name : vpc_id
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : VpcId
+Load :
+If :
+Call :
+Name : is_dns_hostnames_enabled
+Name : compute
+Name : vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : DNS hostnames enabled for %s
+BinOp :
+Call :
+Name : str
+Name : vpc_id
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : DNS hostnames disabled for %s. You have to enable DNS hostnames to use Route 53 private hosted zones. %s
+Name : vpc_id
+Call :
+Name : lineno
+If :
+Call :
+Name : is_dns_support_enabled
+Name : compute
+Name : vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : DNS support enabled for %s
+BinOp :
+Call :
+Name : str
+Name : vpc_id
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : DNS support disabled for %s.  You have to enabled DNS support to use Route 53 private hosted zones. %s
+Call :
+Name : str
+Name : vpc_id
+Call :
+Name : lineno
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+BinOp :
+Constant : DNS support disabled for 
+Add :
+Call :
+Name : str
+Name : vpc_id
+Add :
+Constant : .  You have to enabled DNS support to use Route 53 private hosted zones. 
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+Assign :
+Name : hosted_zones
+Call :
+Name : list_hosted_zones
+Name : route53
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : hosted_zones: %s
+BinOp :
+Call :
+Name : str
+Name : hosted_zones
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zones
+Call :
+Name : get_private_hosted_zones
+Name : hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_hosted_zones: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : private_hosted_zones
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_collection
+Call :
+Name : get_private_hosted_zone_collection
+Name : private_hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_hosted_zone_collection: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : private_hosted_zone_collection
+Add :
+Call :
+Name : lineno
+Assign :
+Name : public_hosted_zones
+Call :
+Name : get_public_hosted_zones
+Name : hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : public_hosted_zones: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : public_hosted_zones
+Add :
+Call :
+Name : lineno
+Assign :
+Name : public_hosted_zones_collection
+Call :
+Name : get_public_hosted_zone_collection
+Name : public_hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : public_hosted_zones_collection: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : public_hosted_zones_collection
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : reversed_lookup_zone: %s
+BinOp :
+Call :
+Name : str
+Name : reversed_lookup_zone
+Add :
+Call :
+Name : lineno
+Assign :
+Name : reverse_zone
+Constant : None
+For :
+Name : record
+Subscript :
+Name : hosted_zones
+Constant : HostedZones
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : record name: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Name : record
+Constant : Name
+Load :
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Subscript :
+Name : record
+Constant : Name
+Load :
+Eq :
+Name : reversed_lookup_zone
+Assign :
+Name : reverse_zone
+Subscript :
+Name : record
+Constant : Name
+Load :
+Break :
+If :
+Name : reverse_zone
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Reverse lookup zone found: %s
+BinOp :
+Call :
+Name : str
+Name : reversed_lookup_zone
+Add :
+Call :
+Name : lineno
+Assign :
+Name : reverse_lookup_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : reversed_lookup_zone
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reverse_lookup_zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : reverse_hosted_zone_properties
+Call :
+Name : get_hosted_zone_properties
+Name : route53
+Name : reverse_lookup_zone_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : reverse_hosted_zone_properties: %s
+BinOp :
+Call :
+Name : str
+Name : reverse_hosted_zone_properties
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : vpc_id
+In :
+Call :
+Name : map
+Lambda :
+arguments :
+arg : x
+Subscript :
+Name : x
+Constant : VPCId
+Load :
+Subscript :
+Name : reverse_hosted_zone_properties
+Constant : VPCs
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Reverse lookup zone %s is associated with VPC %s %s
+Name : reverse_lookup_zone_id
+Name : vpc_id
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Associating zone %s with VPC %s
+Name : reverse_lookup_zone_id
+Name : vpc_id
+Try :
+Expr :
+Call :
+Name : associate_zone
+Name : route53
+Name : reverse_lookup_zone_id
+Name : region
+Name : vpc_id
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : No matching reverse lookup zone, so we will create one %s
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Expr :
+Call :
+Name : create_reverse_lookup_zone
+Name : route53
+Name : instance
+Name : reversed_domain_prefix
+Name : region
+Assign :
+Name : reverse_lookup_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : reversed_lookup_zone
+Expr :
+Call :
+Name : time
+Load :
+Attribute : sleep
+Call :
+Name : random
+Load :
+Attribute : random
+If :
+Compare :
+Name : tag_type
+Eq :
+Constant : cname
+Assign :
+Name : cname
+Call :
+Name : get_cname_from_tags
+Name : tags
+Assign :
+Name : cname_prefix
+Subscript :
+Call :
+Name : cname
+Load :
+Attribute : split
+Constant : .
+Constant : 0
+Load :
+If :
+UnaryOp :
+Not :
+Name : cname
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+Constant : Must have a CNAME tag for lambda to work. Please add CNAME to instance tags
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : iterating through tags %s
+Call :
+Name : lineno
+For :
+Name : tag
+Name : tags
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : #### tag: %s
+BinOp :
+Call :
+Name : str
+Name : tag
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Constant : ZONE
+In :
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Key
+Dict : keys, values
+Load :
+Attribute : lstrip
+Load :
+Attribute : upper
+If :
+Call :
+Name : is_valid_hostname
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : hostname is valid %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : checking if value in private: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : private_hosted_zone_collection
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : checking if value in public: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : list
+Name : public_hosted_zones_collection
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+In :
+Name : private_hosted_zone_collection
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Private zone found: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_name
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_zone_name: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : private_hosted_zone_name
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_hosted_zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_properties
+Call :
+Name : get_hosted_zone_properties
+Name : route53
+Name : private_hosted_zone_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_hosted_zone_properties: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_properties
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Assign :
+Name : found_vpc_id
+Constant : False
+If :
+Compare :
+Constant : VPCs
+In :
+Name : private_hosted_zone_properties
+For :
+Name : vpc
+Subscript :
+Name : private_hosted_zone_properties
+Constant : VPCs
+Load :
+If :
+Compare :
+Subscript :
+Name : vpc
+Constant : VPCId
+Load :
+Eq :
+Name : vpc_id
+Assign :
+Name : found_vpc_id
+Constant : True
+If :
+Name : found_vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Private hosted zone %s is associated with VPC %s %s
+Name : private_hosted_zone_id
+Name : vpc_id
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Associating zone %s with VPC %s %s
+Name : private_hosted_zone_id
+Name : vpc_id
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : associate_zone
+Name : route53
+Name : private_hosted_zone_id
+Name : region
+Name : vpc_id
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : You cannot create an association with a VPC with an overlapping subdomain.
+
+Name : err
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+Try :
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : private_host_name
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : appending to caller response %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : private_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : in-addr.arpa with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : private_host_name
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : private_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_dns_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+In :
+Name : public_hosted_zones_collection
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Public zone found %s
+BinOp :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Add :
+Call :
+Name : lineno
+Assign :
+Name : public_hosted_zone_name
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+Assign :
+Name : public_hosted_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : public_hosted_zone_name
+keyword :
+Constant : False
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Try :
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : public_hosted_zone_id
+Name : cname_prefix
+Name : public_hosted_zone_name
+Constant : A
+Name : public_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created A record in zone id: 
+Add :
+Call :
+Name : str
+Name : public_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_prefix
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : public_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : public_ip
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : public_hosted_zone_id
+Name : cname_prefix
+Name : public_hosted_zone_name
+Constant : A
+Name : public_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted A record in zone id: 
+Add :
+Call :
+Name : str
+Name : public_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_prefix
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : public_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : public_ip
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : No matching zone found for %s
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : %s is not a valid host name %s
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : The tag '%s' is not a zone tag %s
+Call :
+Name : str
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Key
+Call :
+Name : lineno
+If :
+Compare :
+Constant : CNAME
+In :
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Key
+Dict : keys, values
+Load :
+Attribute : lstrip
+Load :
+Attribute : upper
+If :
+Call :
+Name : is_valid_hostname
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : CNAME hostname of %s is valid %s
+Call :
+Name : str
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Call :
+Name : lineno
+Assign :
+Name : icname
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : icname: %s
+BinOp :
+Call :
+Name : str
+Name : icname
+Add :
+Call :
+Name : lineno
+Assign :
+Name : cname_host_name
+Subscript :
+Call :
+Name : icname
+Load :
+Attribute : split
+Constant : .
+Constant : 0
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_host_name: %s
+BinOp :
+Call :
+Name : str
+Name : cname_host_name
+Add :
+Call :
+Name : lineno
+Assign :
+Name : cname_domain_suffix
+Subscript :
+Name : icname
+Slice :
+BinOp :
+Call :
+Name : icname
+Load :
+Attribute : find
+Constant : .
+Add :
+Constant : 1
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_domain_suffix: %s
+BinOp :
+Call :
+Name : str
+Name : cname_domain_suffix
+Add :
+Call :
+Name : lineno
+Assign :
+Name : cname_domain_suffix_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : cname_domain_suffix
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_domain_suffix_id: %s
+Call :
+Name : str
+Name : cname_domain_suffix_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Iterating over private hosted zones %s
+Call :
+Name : lineno
+For :
+Name : cname_private_hosted_zone
+Name : private_hosted_zone_collection
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname for private hosted zone in private hosted zone collection: %s
+BinOp :
+Call :
+Name : str
+Name : cname_private_hosted_zone
+Add :
+Call :
+Name : lineno
+Assign :
+Name : cname_private_hosted_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : cname_private_hosted_zone
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_private_hosted_zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : cname_private_hosted_zone_id
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_domain_suffix_id: %s
+BinOp :
+Call :
+Name : str
+Name : cname_domain_suffix_id
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : cname_domain_suffix_id
+Eq :
+Name : cname_private_hosted_zone_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_domain_suffix_id: %s
+BinOp :
+Call :
+Name : str
+Name : cname_domain_suffix_id
+Add :
+Call :
+Name : lineno
+If :
+Call :
+Name : cname
+Load :
+Attribute : endswith
+Name : cname_private_hosted_zone
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname ends with %s
+BinOp :
+Call :
+Name : str
+Name : cname_private_hosted_zone
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : creating resource record %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_dns_name: %s
+BinOp :
+Call :
+Name : str
+Name : private_dns_name
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : cname_private_hosted_zone_id
+Name : cname_host_name
+Name : cname_private_hosted_zone
+Constant : CNAME
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created CNAME record in zone id: 
+Add :
+Call :
+Name : str
+Name : cname_private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : cname_private_hosted_zone
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : deleting resource record %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : cname_private_hosted_zone_id
+Name : cname_host_name
+Name : cname_private_hosted_zone
+Constant : CNAME
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted CNAME record in zone id: 
+Add :
+Call :
+Name : str
+Name : cname_private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : cname_private_hosted_zone
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+If :
+Name : public_dns_name
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Iterating over public hosted zones %s
+Call :
+Name : lineno
+For :
+Name : cname_public_hosted_zone
+Name : public_hosted_zones_collection
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname in public hosted zone: %s
+BinOp :
+Call :
+Name : str
+Name : cname_public_hosted_zone
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname is: %s
+BinOp :
+Call :
+Name : str
+Name : cname
+Add :
+Call :
+Name : lineno
+If :
+Call :
+Name : cname
+Load :
+Attribute : endswith
+Name : cname_public_hosted_zone
+Assign :
+Name : cname_public_hosted_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : cname_public_hosted_zone
+Constant : False
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : cname_public_hosted_zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : cname_public_hosted_zone_id
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+Try :
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : cname_public_hosted_zone_id
+Name : cname_host_name
+Name : cname_public_hosted_zone
+Constant : CNAME
+Name : public_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created CNAME record in zone id: 
+Add :
+Call :
+Name : str
+Name : cname_public_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : cname_public_hosted_zone
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : public_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : cname_public_hosted_zone_id
+Name : cname_host_name
+Name : cname_public_hosted_zone
+Constant : CNAME
+Name : public_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted CNAME record in zone id: 
+Add :
+Call :
+Name : str
+Name : cname_public_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : cname_public_hosted_zone
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : public_dns_name
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : 
+#############
+Iterate over DHCP option sets %s
+
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : trying to get dhcp option set id %s
+Call :
+Name : lineno
+Assign :
+Name : dhcp_options_id
+Call :
+Name : get_dhcp_option_set_id_for_vpc
+Name : compute
+Name : vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : dhcp_options_id: %s
+BinOp :
+Call :
+Name : str
+Name : dhcp_options_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : dhcp_configurations
+Call :
+Name : get_dhcp_configurations
+Name : compute
+Name : dhcp_options_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : dhcp_configurations: %s
+BinOp :
+Call :
+Name : str
+Name : get_dhcp_configurations
+Add :
+Call :
+Name : lineno
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : No DHCP option set assigned to this VPC %s
+
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+For :
+Name : configuration
+Name : dhcp_configurations
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : configuration: %s
+BinOp :
+Call :
+Name : str
+Name : configuration
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private hosted zones: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_collection
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : configuration
+In :
+Name : private_hosted_zone_collection
+Assign :
+Name : private_hosted_zone_name
+Name : configuration
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Private zone found %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_id
+Call :
+Name : get_zone_id
+Name : route53
+Name : private_hosted_zone_name
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Private_hosted_zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : private_hosted_zone_properties
+Call :
+Name : get_hosted_zone_properties
+Name : route53
+Name : private_hosted_zone_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : private_hosted_zone_properties: %s
+BinOp :
+Call :
+Name : str
+Name : private_hosted_zone_properties
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+Eq :
+Constant : running
+If :
+Compare :
+Name : vpc_id
+In :
+Call :
+Name : map
+Lambda :
+arguments :
+arg : x
+Subscript :
+Name : x
+Constant : VPCId
+Load :
+Subscript :
+Name : private_hosted_zone_properties
+Constant : VPCs
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Private hosted zone %s is associated with VPC %s %s
+Name : private_hosted_zone_id
+Name : vpc_id
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Associating zone %s with VPC %s %s
+Name : private_hosted_zone_id
+Name : vpc_id
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : associate_zone
+Name : route53
+Name : private_hosted_zone_id
+Name : region
+Name : vpc_id
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : You cannot create an association with a                         VPC with an overlapping subdomain. %s
+
+Call :
+Name : str
+Name : err
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : exit
+Try :
+If :
+UnaryOp :
+Not :
+Compare :
+Name : tag_type
+Eq :
+Constant : cname
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Creating resource records %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : private_host_name
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : private_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : in-addr.arpa with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Creating resource records %s
+Call :
+Name : lineno
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : cname_prefix
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_prefix
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : create_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : cname
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Created PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : in-addr.arpa with value: 
+Add :
+Call :
+Name : str
+Name : cname
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Deleting resource records: %s
+Call :
+Name : lineno
+Try :
+If :
+UnaryOp :
+Not :
+Compare :
+Name : tag_type
+Eq :
+Constant : cname
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : private_host_name
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : private_host_name
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : private_dns_name
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : in-addr.arpa with value: 
+Add :
+Call :
+Name : str
+Name : private_dns_name
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : private_hosted_zone_id
+Name : cname_prefix
+Name : private_hosted_zone_name
+Constant : A
+Name : private_ip
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted A record in zone id: 
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : cname_prefix
+Add :
+Constant : .
+Add :
+Call :
+Name : str
+Name : private_hosted_zone_name
+Add :
+Constant :  with value: 
+Add :
+Call :
+Name : str
+Name : private_ip
+Expr :
+Call :
+Name : delete_resource_record
+Name : route53
+Name : reverse_lookup_zone_id
+Name : reversed_ip_address
+Constant : in-addr.arpa
+Constant : PTR
+Name : cname
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : append
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : Deleted PTR record in zone id: 
+Add :
+Call :
+Name : str
+Name : reverse_lookup_zone_id
+Add :
+Constant :  for hosted zone 
+Add :
+Call :
+Name : str
+Name : reversed_ip_address
+Add :
+Constant : in-addr.arpa with value: 
+Add :
+Call :
+Name : str
+Name : cname
+ExceptHandler :
+Name : BaseException
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : No matching zone for %s
+BinOp :
+Call :
+Name : str
+Name : configuration
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Name : state
+NotEq :
+Constant : running
+Expr :
+Call :
+Name : delete_item_from_dynamodb_table
+Name : dynamodb_client
+Constant : DDNS
+Name : instance_id
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : insert
+Constant : 0
+Constant : Successfully removed recordsets
+Return :
+Name : caller_response
+Expr :
+Call :
+Name : caller_response
+Load :
+Attribute : insert
+Constant : 0
+Constant : Successfully created recordsets
+Return :
+Name : caller_response
+EndFunction :
+FunctionDef : determine_tag_type
+arguments :
+arg : tags
+Expr :
+Constant : 
+    Determine tag type - CNAME or ZONE
+    :param tags:
+    :return:
+    
+Assign :
+Name : cname
+UnaryOp :
+USub :
+Constant : 1
+Assign :
+Name : zone
+UnaryOp :
+USub :
+Constant : 1
+For :
+Name : item
+Name : tags
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Call :
+Subscript :
+Name : item
+Constant : Key
+Load :
+Load :
+Attribute : lower
+Eq :
+Constant : cname
+Assign :
+Name : cname
+Constant : 1
+If :
+Compare :
+Call :
+Subscript :
+Name : item
+Constant : Key
+Load :
+Load :
+Attribute : lower
+Eq :
+Constant : zone
+Assign :
+Name : zone
+Constant : 1
+If :
+BoolOp :
+And :
+Compare :
+Name : cname
+Lt :
+Constant : 0
+Compare :
+Name : zone
+Lt :
+Constant : 0
+Return :
+Constant : None
+If :
+BoolOp :
+And :
+Compare :
+Name : cname
+Gt :
+Constant : 0
+Compare :
+Name : zone
+Lt :
+Constant : 0
+Return :
+Constant : cname
+If :
+BoolOp :
+And :
+Compare :
+Name : cname
+Lt :
+Constant : 0
+Compare :
+Name : zone
+Gt :
+Constant : 0
+Return :
+Constant : zone
+Return :
+Constant : invalid
+EndFunction :
+FunctionDef : get_cname_from_tags
+arguments :
+arg : tags
+Expr :
+Constant : 
+    Get the cname prefix from tags
+    :param tags:
+    :return:
+    
+Try :
+For :
+Name : tag
+Name : tags
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : tag: %s
+Call :
+Name : str
+Name : tag
+If :
+Compare :
+Constant : CNAME
+In :
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Key
+Dict : keys, values
+Load :
+Attribute : lstrip
+Load :
+Attribute : upper
+Assign :
+Name : cname
+Call :
+Call :
+Call :
+Name : tag
+Load :
+Attribute : get
+Constant : Value
+Load :
+Attribute : lstrip
+Load :
+Attribute : lower
+Return :
+Name : cname
+Return :
+Constant : None
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_instances
+arguments :
+arg : client
+arg : instance_id
+Expr :
+Constant : 
+    Get ec2 instance information
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : describe_instances
+keyword :
+List : elts
+Name : instance_id
+Load :
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : list_hosted_zones
+arguments :
+arg : client
+Expr :
+Constant : 
+    Get route53 hosted zones
+    :param client:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : list_hosted_zones
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : list_tables
+arguments :
+arg : client
+Expr :
+Constant : 
+    List the dynamodb tables
+    :param client:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : list_tables
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : delete_item_from_dynamodb_table
+arguments :
+arg : client
+arg : table
+arg : instance_id
+Expr :
+Constant : 
+    Delete the item from dynamodb table
+    :param client:
+    :param table:
+    :param instance_id:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : delete_item
+keyword :
+Name : table
+keyword :
+Dict : keys, values
+Constant : InstanceId
+Dict : keys, values
+Constant : S
+Name : instance_id
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : put_item_in_dynamodb_table
+arguments :
+arg : client
+arg : table
+arg : instance_id
+arg : instance_attributes
+Expr :
+Constant : 
+    Put item in dynamodb table
+    :param client:
+    :param table:
+    :param instance_id:
+    :param instance_attributes:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : attributes: %s
+BinOp :
+Call :
+Name : str
+Name : instance_attributes
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : putting attributes: %s
+BinOp :
+Call :
+Name : str
+Name : instance_attributes
+Add :
+Call :
+Name : lineno
+Return :
+Call :
+Name : client
+Load :
+Attribute : put_item
+keyword :
+Call :
+Name : str
+Name : table
+keyword :
+Dict : keys, values
+Constant : InstanceId
+Constant : InstanceAttributes
+Dict : keys, values
+Constant : S
+Name : instance_id
+Dict : keys, values
+Constant : S
+Call :
+Name : str
+Name : instance_attributes
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_item_from_dynamodb_table
+arguments :
+arg : client
+arg : table
+arg : instance_id
+Expr :
+Constant : 
+    Get item from dynamodb table
+    :param client:
+    :param table:
+    :param instance_id:
+    :return:
+    
+Try :
+Assign :
+Name : item
+Call :
+Name : client
+Load :
+Attribute : get_item
+keyword :
+Name : table
+keyword :
+Dict : keys, values
+Constant : InstanceId
+Dict : keys, values
+Constant : S
+Name : instance_id
+keyword :
+List : elts
+Constant : InstanceAttributes
+Load :
+If :
+Compare :
+Constant : Item
+In :
+Name : item
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : returned item: %s
+BinOp :
+Call :
+Name : str
+Subscript :
+Subscript :
+Subscript :
+Name : item
+Constant : Item
+Load :
+Constant : InstanceAttributes
+Load :
+Constant : S
+Load :
+Add :
+Call :
+Name : lineno
+Assign :
+Name : item
+Call :
+Subscript :
+Subscript :
+Subscript :
+Name : item
+Constant : Item
+Load :
+Constant : InstanceAttributes
+Load :
+Constant : S
+Load :
+Load :
+Attribute : replace
+Constant : '
+Constant : "
+Assign :
+Name : item
+Call :
+Name : item
+Load :
+Attribute : replace
+Constant :  True,
+Constant :  "True",
+Assign :
+Name : item
+Call :
+Name : item
+Load :
+Attribute : replace
+Constant :  False,
+Constant :  "False",
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+Return :
+Call :
+Name : json
+Load :
+Attribute : loads
+Name : item
+Return :
+Constant : None
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+EndFunction :
+FunctionDef : get_private_hosted_zone_collection
+arguments :
+arg : private_hosted_zones
+Expr :
+Constant : 
+    Get private hosted zone collection
+    :param private_hosted_zones:
+    :return:
+    
+Try :
+Assign :
+Name : private_hosted_zone_collection
+List : elts
+Load :
+For :
+Name : item
+Name : private_hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : private_hosted_zone_collection
+Load :
+Attribute : append
+Subscript :
+Name : item
+Constant : Name
+Load :
+Return :
+Name : private_hosted_zone_collection
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_public_hosted_zone_collection
+arguments :
+arg : public_hosted_zones
+Expr :
+Constant : 
+    Get public hosted zone collection
+    :param public_hosted_zones:
+    :return:
+    
+Try :
+Assign :
+Name : public_hosted_zone_collection
+List : elts
+Load :
+For :
+Name : item
+Name : public_hosted_zones
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : items: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : public_hosted_zone_collection
+Load :
+Attribute : append
+Subscript :
+Name : item
+Constant : Name
+Load :
+Return :
+Name : public_hosted_zone_collection
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_public_hosted_zones
+arguments :
+arg : hosted_zones
+Expr :
+Constant : 
+    Get public hosted zones
+    :param hosted_zones:
+    :return:
+    
+Try :
+Assign :
+Name : public_hosted_zones
+List : elts
+Load :
+For :
+Name : item
+Subscript :
+Name : hosted_zones
+Constant : HostedZones
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+If :
+UnaryOp :
+Not :
+Subscript :
+Subscript :
+Name : item
+Constant : Config
+Load :
+Constant : PrivateZone
+Load :
+Expr :
+Call :
+Name : public_hosted_zones
+Load :
+Attribute : append
+Name : item
+Return :
+Name : public_hosted_zones
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_private_hosted_zones
+arguments :
+arg : hosted_zones
+Expr :
+Constant : 
+    Get private hosted zones
+    :param hosted_zones:
+    :return:
+    
+Try :
+Assign :
+Name : private_hosted_zones
+List : elts
+Load :
+For :
+Name : item
+Subscript :
+Name : hosted_zones
+Constant : HostedZones
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+If :
+Subscript :
+Subscript :
+Name : item
+Constant : Config
+Load :
+Constant : PrivateZone
+Load :
+Expr :
+Call :
+Name : private_hosted_zones
+Load :
+Attribute : append
+Name : item
+Return :
+Name : private_hosted_zones
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_dhcp_option_set_id_for_vpc
+arguments :
+arg : client
+arg : vpc_id
+Expr :
+Constant : 
+    Get the dhcp option set from vpc
+    :param client:
+    :param vpc_id:
+    :return:
+    
+Try :
+Assign :
+Name : option_sets
+Dict : keys, values
+Assign :
+Name : results
+Call :
+Name : client
+Load :
+Attribute : describe_vpcs
+For :
+Name : item
+Subscript :
+Name : results
+Constant : Vpcs
+Load :
+If :
+Compare :
+Constant : DhcpOptionsId
+In :
+Name : item
+Assign :
+Subscript :
+Name : option_sets
+Call :
+Name : str
+Subscript :
+Name : item
+Constant : VpcId
+Load :
+Store :
+Subscript :
+Name : item
+Constant : DhcpOptionsId
+Load :
+Assign :
+Subscript :
+Name : option_sets
+Call :
+Name : str
+Subscript :
+Name : item
+Constant : VpcId
+Load :
+Store :
+Constant : None
+Return :
+Subscript :
+Name : option_sets
+Name : vpc_id
+Load :
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : create_dynamodb_table
+arguments :
+arg : client
+arg : table_name
+Expr :
+Constant : 
+    Create dynamodb table
+    :param client:
+    :param table_name:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : create_table
+keyword :
+Name : table_name
+keyword :
+List : elts
+Dict : keys, values
+Constant : AttributeName
+Constant : AttributeType
+Constant : InstanceId
+Constant : S
+Load :
+keyword :
+List : elts
+Dict : keys, values
+Constant : AttributeName
+Constant : KeyType
+Constant : InstanceId
+Constant : HASH
+Load :
+keyword :
+Dict : keys, values
+Constant : ReadCapacityUnits
+Constant : WriteCapacityUnits
+Constant : 4
+Constant : 4
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_dynamodb_table
+arguments :
+arg : client
+arg : table_name
+Expr :
+Constant : 
+    Get the dynamodb table
+    :param client:
+    :param table_name:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : describe_table
+keyword :
+Name : table_name
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : create_table
+arguments :
+arg : client
+arg : table_name
+Expr :
+Constant : 
+    Create dynamodb table
+    :param client:
+    :param table_name:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : create_dynamodb_table
+Name : client
+Name : table_name
+Assign :
+Name : created
+UnaryOp :
+USub :
+Constant : 1
+While :
+Compare :
+Name : created
+Lt :
+Constant : 0
+Assign :
+Name : table
+Call :
+Name : get_dynamodb_table
+Name : client
+Name : table_name
+If :
+Compare :
+Subscript :
+Subscript :
+Name : table
+Constant : Table
+Load :
+Constant : TableStatus
+Load :
+Eq :
+Constant : ACTIVE
+Assign :
+Name : created
+Constant : 1
+Expr :
+Call :
+Name : time
+Load :
+Attribute : sleep
+Constant : 15
+Return :
+Constant : True
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : change_resource_recordset
+arguments :
+arg : client
+arg : zone_id
+arg : host_name
+arg : hosted_zone_name
+arg : record_type
+arg : value
+Expr :
+Constant : 
+    Change resource recordset
+    :param client:
+    :param zone_id:
+    :param host_name:
+    :param hosted_zone_name:
+    :param value:
+    :return:
+    
+Try :
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : change_resource_record_sets
+keyword :
+Name : zone_id
+keyword :
+Dict : keys, values
+Constant : Comment
+Constant : Changes
+Constant : Updated by Lambda DDNS
+List : elts
+Dict : keys, values
+Constant : Action
+Constant : ResourceRecordSet
+Constant : UPSERT
+Dict : keys, values
+Constant : Name
+Constant : Type
+Constant : TTL
+Constant : ResourceRecords
+BinOp :
+Name : host_name
+Add :
+Name : hosted_zone_name
+Name : record_type
+Constant : 60
+List : elts
+Dict : keys, values
+Constant : Value
+Name : value
+Load :
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : response: %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Return :
+Name : response
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Error creating resource record: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Assign :
+Name : error_message
+Call :
+Name : str
+Name : err
+If :
+Compare :
+Constant : conflicts with other records
+In :
+Name : error_message
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Can not create dns record because of duplicates: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Return :
+Constant : Duplicate resource record
+If :
+Compare :
+Constant : conflicting RRSet
+In :
+Name : error_message
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Can not create dns record because of duplicates: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Return :
+Constant : Conflicting resource record
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Return :
+BinOp :
+Constant : Unexpected error: 
+Add :
+Call :
+Name : str
+Name : err
+EndFunction :
+FunctionDef : create_resource_record
+arguments :
+arg : client
+arg : zone_id
+arg : host_name
+arg : hosted_zone_name
+arg : record_type
+arg : value
+Expr :
+Constant : 
+    This function creates resource records in the hosted zone passed by the calling function.
+    :param client:
+    :param zone_id:
+    :param host_name:
+    :param hosted_zone_name:
+    :param record_type:
+    :param value:
+    :return:
+    
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Creating resource record: zone_id: %s host_name: %s hosted_zone_name: %s record_type: %s value: %s %s
+Name : zone_id
+Name : host_name
+Name : hosted_zone_name
+Name : record_type
+Name : value
+Call :
+Name : lineno
+Try :
+If :
+Compare :
+Subscript :
+Name : host_name
+UnaryOp :
+USub :
+Constant : 1
+Load :
+NotEq :
+Constant : .
+Assign :
+Name : host_name
+BinOp :
+Name : host_name
+Add :
+Constant : .
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Updating %s in zone %s%s to %s %s
+Name : record_type
+Name : host_name
+Name : hosted_zone_name
+Name : value
+Call :
+Name : lineno
+Expr :
+Call :
+Name : time
+Load :
+Attribute : sleep
+Constant : 1
+Assign :
+Name : response
+Call :
+Name : change_resource_recordset
+Name : client
+Name : zone_id
+Name : host_name
+Name : hosted_zone_name
+Name : record_type
+Name : value
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : response: %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Return :
+Name : response
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Error creating resource record: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Constant : is not permitted as it conflicts with other records with the same DNS name in zone
+In :
+Call :
+Name : str
+Name : err
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Can not create dns record because of duplicates: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : delete_resource_record
+arguments :
+arg : client
+arg : zone_id
+arg : host_name
+arg : hosted_zone_name
+arg : record_type
+arg : value
+Expr :
+Constant : 
+    This function deletes resource records from the hosted zone passed by the calling function.
+    :param client:
+    :param zone_id:
+    :param host_name:
+    :param hosted_zone_name:
+    :param record_type:
+    :param value:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Deleting %s record %s in zone %s %s
+Name : record_type
+Name : host_name
+Name : hosted_zone_name
+Call :
+Name : lineno
+If :
+Compare :
+Subscript :
+Name : host_name
+UnaryOp :
+USub :
+Constant : 1
+Load :
+NotEq :
+Constant : .
+Assign :
+Name : host_name
+BinOp :
+Name : host_name
+Add :
+Constant : .
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : change_resource_record_sets
+keyword :
+Name : zone_id
+keyword :
+Dict : keys, values
+Constant : Comment
+Constant : Changes
+Constant : Updated by Lambda DDNS
+List : elts
+Dict : keys, values
+Constant : Action
+Constant : ResourceRecordSet
+Constant : DELETE
+Dict : keys, values
+Constant : Name
+Constant : Type
+Constant : TTL
+Constant : ResourceRecords
+BinOp :
+Name : host_name
+Add :
+Name : hosted_zone_name
+Name : record_type
+Constant : 60
+List : elts
+Dict : keys, values
+Constant : Value
+Name : value
+Load :
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : delete record response: %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Return :
+Name : response
+ExceptHandler :
+Name : ClientError
+If :
+Compare :
+Constant : Not Found
+In :
+Call :
+Name : str
+Name : err
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Record not found error: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Return :
+If :
+BoolOp :
+And :
+Compare :
+Constant : InvalidChangeBatch
+In :
+Call :
+Name : str
+Name : err
+Compare :
+Constant : it was not found
+In :
+Call :
+Name : str
+Name : err
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Record not found error: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+Return :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_zone_id
+arguments :
+arg : client
+arg : zone_name
+arg : private_zone
+Constant : True
+Expr :
+Constant : 
+    This function returns the zone id for the zone name that's passed into the function.
+    :param client:
+    :param zone_name:
+    :return:
+    
+Try :
+If :
+Compare :
+Subscript :
+Name : zone_name
+UnaryOp :
+USub :
+Constant : 1
+Load :
+NotEq :
+Constant : .
+Assign :
+Name : zone_name
+BinOp :
+Name : zone_name
+Add :
+Constant : .
+Assign :
+Name : hosted_zones
+Call :
+Name : list_hosted_zones
+Name : client
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : zone name: %s
+BinOp :
+Call :
+Name : str
+Name : zone_name
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : hosted_zones: %s
+BinOp :
+Call :
+Name : str
+Name : hosted_zones
+Add :
+Call :
+Name : lineno
+Assign :
+Name : zones
+List : elts
+Load :
+For :
+Name : record
+Subscript :
+Name : hosted_zones
+Constant : HostedZones
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : record: %s
+BinOp :
+Call :
+Name : str
+Name : record
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Subscript :
+Subscript :
+Name : record
+Constant : Config
+Load :
+Constant : PrivateZone
+Load :
+Eq :
+Name : private_zone
+If :
+Compare :
+Subscript :
+Name : record
+Constant : Name
+Load :
+Eq :
+Name : zone_name
+Expr :
+Call :
+Name : zones
+Load :
+Attribute : append
+Name : record
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : zones: %s
+BinOp :
+Call :
+Name : str
+Name : zones
+Add :
+Call :
+Name : lineno
+Try :
+Assign :
+Name : zone_id_long
+Subscript :
+Subscript :
+Name : zones
+Constant : 0
+Load :
+Constant : Id
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : zone id: %s
+BinOp :
+Call :
+Name : str
+Name : zone_id_long
+Add :
+Call :
+Name : lineno
+Assign :
+Name : zone_id
+Subscript :
+Call :
+Name : str
+Load :
+Attribute : split
+Call :
+Name : str
+Name : zone_id_long
+Constant : /
+Constant : 2
+Load :
+Return :
+Name : zone_id
+ExceptHandler :
+Return :
+Constant : None
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : is_valid_hostname
+arguments :
+arg : hostname
+Expr :
+Constant : 
+    This function checks to see whether the hostname entered
+    into the zone and cname tags is a valid hostname.
+    :param hostname:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : determining if hostname is valid: %s
+BinOp :
+Call :
+Name : str
+Name : hostname
+Add :
+Call :
+Name : lineno
+If :
+BoolOp :
+Or :
+Compare :
+Name : hostname
+Is :
+Constant : None
+Compare :
+Call :
+Name : len
+Name : hostname
+Gt :
+Constant : 255
+Return :
+Constant : False
+If :
+Compare :
+Subscript :
+Name : hostname
+UnaryOp :
+USub :
+Constant : 1
+Load :
+Eq :
+Constant : .
+Assign :
+Name : hostname
+Subscript :
+Name : hostname
+Slice :
+UnaryOp :
+USub :
+Constant : 1
+Load :
+Assign :
+Name : allowed
+Call :
+Name : re
+Load :
+Attribute : compile
+Constant : (?!-)[A-Z\d-]{1,63}(?<!-)$
+Name : re
+Load :
+Attribute : IGNORECASE
+Return :
+Call :
+Name : all
+GeneratorExp :
+Call :
+Name : allowed
+Load :
+Attribute : match
+Name : x
+comprehension : [] 0
+Name : x
+Call :
+Name : hostname
+Load :
+Attribute : split
+Constant : .
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_dhcp_configurations
+arguments :
+arg : client
+arg : dhcp_options_id
+Expr :
+Constant : 
+    This function returns the names of the zones/domains that are in the option set.
+    :param client:
+    :param dhcp_options_id:
+    :return:
+    
+Try :
+Assign :
+Name : zone_names
+List : elts
+Load :
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : describe_dhcp_options
+keyword :
+List : elts
+Call :
+Name : str
+Name : dhcp_options_id
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : response: %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Assign :
+Name : dhcp_configurations
+Subscript :
+Subscript :
+Subscript :
+Name : response
+Constant : DhcpOptions
+Load :
+Constant : 0
+Load :
+Constant : DhcpConfigurations
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : dhcp_configurations: %s
+BinOp :
+Call :
+Name : str
+Name : dhcp_configurations
+Add :
+Call :
+Name : lineno
+For :
+Name : configuration
+Name : dhcp_configurations
+For :
+Name : item
+Subscript :
+Name : configuration
+Constant : Values
+Load :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : zone_names
+Load :
+Attribute : append
+BinOp :
+Call :
+Name : str
+Subscript :
+Name : item
+Constant : Value
+Load :
+Add :
+Constant : .
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : zone name: %s
+BinOp :
+Call :
+Name : str
+Name : zone_names
+Add :
+Call :
+Name : lineno
+Return :
+Name : zone_names
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : reverse_list
+arguments :
+arg : ip_list
+Expr :
+Constant : 
+    Reverses the order of the instance's IP address and
+    helps construct the reverse lookup zone name.
+    :param list:
+    :return:
+    
+Try :
+If :
+BoolOp :
+Or :
+Call :
+Name : re
+Load :
+Attribute : search
+Constant : \d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}
+Name : ip_list
+Call :
+Name : re
+Load :
+Attribute : search
+Constant : \d{1,3}.\d{1,3}.\d{1,3}\.
+Name : ip_list
+Call :
+Name : re
+Load :
+Attribute : search
+Constant : \d{1,3}.\d{1,3}\.
+Name : ip_list
+Call :
+Name : re
+Load :
+Attribute : search
+Constant : \d{1,3}\.
+Name : ip_list
+Assign :
+Name : my_temp_list
+Call :
+Name : str
+Load :
+Attribute : split
+Call :
+Name : str
+Name : ip_list
+Constant : .
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : temp list: %s
+BinOp :
+Call :
+Name : str
+Name : my_temp_list
+Add :
+Call :
+Name : lineno
+Assign :
+Name : my_list
+List : elts
+Load :
+For :
+Name : item
+Name : my_temp_list
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : item: %s
+BinOp :
+Call :
+Name : str
+Name : item
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Call :
+Name : len
+Name : item
+Gt :
+Constant : 0
+Expr :
+Call :
+Name : my_list
+Load :
+Attribute : append
+Call :
+Name : int
+Name : item
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : list1: %s
+BinOp :
+Call :
+Name : str
+Name : my_list
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : type: %s
+BinOp :
+Call :
+Name : str
+Call :
+Name : type
+Name : my_list
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : my_list
+Load :
+Attribute : reverse
+Assign :
+Name : reversed_list
+Constant : 
+For :
+Name : item
+Name : my_list
+Assign :
+Name : reversed_list
+BinOp :
+BinOp :
+Name : reversed_list
+Add :
+Call :
+Name : str
+Name : item
+Add :
+Constant : .
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : returning: %s
+BinOp :
+Call :
+Name : str
+Name : reversed_list
+Add :
+Call :
+Name : lineno
+Return :
+Name : reversed_list
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : info
+Constant : Not a valid ip
+Expr :
+Call :
+Name : exit
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_reversed_domain_prefix
+arguments :
+arg : subnet_mask
+arg : private_ip
+Expr :
+Constant : 
+    Uses the mask to get the zone prefix for the reverse lookup zone
+    :param subnet_mask:
+    :param private_ip:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : ### Subnet mask: %s
+BinOp :
+Call :
+Name : str
+Name : subnet_mask
+Add :
+Call :
+Name : lineno
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : ### Private ip: %s
+BinOp :
+Call :
+Name : str
+Name : private_ip
+Add :
+Call :
+Name : lineno
+Assign :
+Name : third_octet
+Call :
+Name : re
+Load :
+Attribute : search
+Constant : \d{1,3}.\d{1,3}.\d{1,3}.
+Name : private_ip
+Return :
+Call :
+Name : third_octet
+Load :
+Attribute : group
+Constant : 0
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : create_reverse_lookup_zone
+arguments :
+arg : client
+arg : instance
+arg : reversed_domain_prefix
+arg : region
+Expr :
+Constant : 
+    Creates the reverse lookup zone.
+    :param client:
+    :param instance:
+    :param reversed_domain_prefix:
+    :param region:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Creating reverse lookup zone %s in.addr.arpa. %s
+Call :
+Name : str
+Name : reversed_domain_prefix
+Call :
+Name : lineno
+If :
+Compare :
+Subscript :
+Name : reversed_domain_prefix
+UnaryOp :
+USub :
+Constant : 1
+Load :
+Eq :
+Constant : .
+Assign :
+Name : reversed_domain_prefix
+Subscript :
+Name : reversed_domain_prefix
+Slice :
+UnaryOp :
+USub :
+Constant : 1
+Load :
+Return :
+Call :
+Name : client
+Load :
+Attribute : create_hosted_zone
+keyword :
+BinOp :
+Name : reversed_domain_prefix
+Add :
+Constant : .in-addr.arpa.
+keyword :
+Dict : keys, values
+Constant : VPCRegion
+Constant : VPCId
+Name : region
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Subscript :
+Name : instance
+Constant : Reservations
+Load :
+Constant : 0
+Load :
+Constant : Instances
+Load :
+Constant : 0
+Load :
+Constant : VpcId
+Load :
+keyword :
+Call :
+Name : str
+Call :
+Name : uuid
+Load :
+Attribute : uuid1
+keyword :
+Dict : keys, values
+Constant : Comment
+Constant : Updated by Lambda DDNS
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : json_serial
+arguments :
+arg : obj
+Expr :
+Constant : 
+    JSON serializer for objects not serializable by default json code
+    :param obj:
+    :return:
+    
+Try :
+If :
+Call :
+Name : isinstance
+Name : obj
+Name : datetime
+Load :
+Attribute : datetime
+Assign :
+Name : serial
+Call :
+Name : obj
+Load :
+Attribute : isoformat
+Return :
+Name : serial
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : remove_empty_from_dict
+arguments :
+arg : dictionary
+Expr :
+Constant : 
+    Removes empty keys from dictionary
+    :param d:
+    :return:
+    
+Try :
+If :
+Call :
+Name : isinstance
+Name : dictionary
+Name : dict
+Return :
+Call :
+Name : dict
+GeneratorExp :
+Tuple : elts
+Name : k
+Call :
+Name : remove_empty_from_dict
+Name : v
+Load :
+comprehension : [<ast.BoolOp object at 0x000001A1AE3D0CA0>] 0
+Tuple : elts
+Name : k
+Name : v
+Store :
+Call :
+Name : dictionary
+Load :
+Attribute : items
+BoolOp :
+And :
+Name : v
+Call :
+Name : remove_empty_from_dict
+Name : v
+If :
+Call :
+Name : isinstance
+Name : dictionary
+Name : list
+Return :
+ListComp :
+Call :
+Name : remove_empty_from_dict
+Name : v
+comprehension : [<ast.BoolOp object at 0x000001A1AE3D1000>] 0
+Name : v
+Name : dictionary
+BoolOp :
+And :
+Name : v
+Call :
+Name : remove_empty_from_dict
+Name : v
+Return :
+Name : dictionary
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : associate_zone
+arguments :
+arg : client
+arg : hosted_zone_id
+arg : region
+arg : vpc_id
+Expr :
+Constant : 
+    Associates private hosted zone with VPC
+    :param client:
+    :param hosted_zone_id:
+    :param region:
+    :param vpc_id:
+    :return:
+    
+Try :
+Return :
+Call :
+Name : client
+Load :
+Attribute : associate_vpc_with_hosted_zone
+keyword :
+Name : hosted_zone_id
+keyword :
+Dict : keys, values
+Constant : VPCRegion
+Constant : VPCId
+Name : region
+Name : vpc_id
+keyword :
+Constant : Updated by Lambda DDNS
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : is_dns_hostnames_enabled
+arguments :
+arg : client
+arg : vpc_id
+Expr :
+Constant : 
+    Whether dns hostnames is enabled
+    :param client:
+    :param vpc_id:
+    :return:
+    
+Try :
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : describe_vpc_attribute
+keyword :
+Constant : enableDnsHostnames
+keyword :
+Name : vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Return :
+Subscript :
+Subscript :
+Name : response
+Constant : EnableDnsHostnames
+Load :
+Constant : Value
+Load :
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : is_dns_support_enabled
+arguments :
+arg : client
+arg : vpc_id
+Expr :
+Constant : 
+    Whether dns support is enabled
+    :param client:
+    :param vpc_id:
+    :return:
+    
+Try :
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : describe_vpc_attribute
+keyword :
+Constant : enableDnsSupport
+keyword :
+Name : vpc_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : response2: %s
+BinOp :
+Call :
+Name : str
+Name : response
+Add :
+Call :
+Name : lineno
+Return :
+Subscript :
+Subscript :
+Name : response
+Constant : EnableDnsSupport
+Load :
+Constant : Value
+Load :
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_hosted_zone_properties
+arguments :
+arg : client
+arg : zone_id
+Expr :
+Constant : 
+    Get hosted zone properties
+    :param client:
+    :param zone_id:
+    :return:
+    
+Try :
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : getting hosted zone properties: zone_id: %s
+BinOp :
+Call :
+Name : str
+Name : zone_id
+Add :
+Call :
+Name : lineno
+Assign :
+Name : hosted_zone_properties
+Call :
+Name : client
+Load :
+Attribute : get_hosted_zone
+keyword :
+Name : zone_id
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : hosted_zone_properties: %s
+BinOp :
+Call :
+Name : str
+Name : hosted_zone_properties
+Add :
+Call :
+Name : lineno
+If :
+Compare :
+Constant : ResponseMetadata
+In :
+Name : hosted_zone_properties
+Expr :
+Call :
+Name : hosted_zone_properties
+Load :
+Attribute : pop
+Constant : ResponseMetadata
+Return :
+Name : hosted_zone_properties
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : get_subnet_cidr_block
+arguments :
+arg : client
+arg : subnet_id
+Expr :
+Constant : 
+    Get subnect cidr block
+    :param client:
+    :param subnet_id:
+    :return:
+    
+Try :
+Assign :
+Name : response
+Call :
+Name : client
+Load :
+Attribute : describe_subnets
+keyword :
+List : elts
+Name : subnet_id
+Load :
+Return :
+Subscript :
+Subscript :
+Subscript :
+Name : response
+Constant : Subnets
+Load :
+Constant : 0
+Load :
+Constant : CidrBlock
+Load :
+ExceptHandler :
+Expr :
+Call :
+Name : publish_to_sns
+Name : SNS_CLIENT
+Name : ACCOUNT
+Name : REGION
+BinOp :
+BinOp :
+BinOp :
+Constant : Unexpected error:
+Add :
+Call :
+Name : str
+Subscript :
+Call :
+Name : sys
+Load :
+Attribute : exc_info
+Constant : 0
+Load :
+Add :
+Call :
+Name : lineno
+Add :
+Call :
+Name : lineno
+EndFunction :
+FunctionDef : publish_to_sns
+arguments :
+arg : client
+arg : account
+arg : region
+arg : message
+Expr :
+Constant : 
+    Publish a simple message to the specified SNS topic
+    :param client:
+    :param account:
+    :param region:
+    :param message:
+    :return:
+    
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : SNS message: %s 
+BinOp :
+Call :
+Name : str
+Name : message
+Add :
+Call :
+Name : lineno
+Try :
+Expr :
+Call :
+Name : client
+Load :
+Attribute : publish
+keyword :
+BinOp :
+BinOp :
+BinOp :
+BinOp :
+Constant : arn:aws:sns:
+Add :
+Call :
+Name : str
+Name : region
+Add :
+Constant : :
+Add :
+Call :
+Name : str
+Name : account
+Add :
+Constant : :DDNSAlerts
+keyword :
+Call :
+Name : str
+Name : message
+ExceptHandler :
+Name : ClientError
+Expr :
+Call :
+Name : LOGGER
+Load :
+Attribute : debug
+Constant : Unexpected error: %s
+BinOp :
+Call :
+Name : str
+Name : err
+Add :
+Call :
+Name : lineno
+EndFunction :
