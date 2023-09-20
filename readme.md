@@ -2,7 +2,7 @@
 这个项目是由五位来自于东南大学的本科生所共同开发
 以下是他们的github个人主页:(按字母表顺序)
 
-  $\quad$ [Whe1ve](https://github.com/Whe1veWUPK) $\quad$ [Xavoric](https://github.com/Xavoric) 
+  [m1zukiL](https://github.com/m1zukiL)$\quad$ [Whe1ve](https://github.com/Whe1veWUPK) $\quad$ [Xavoric](https://github.com/Xavoric) 
 # 项目简介
 * 是一个对Python项目的 ***修改影响分析(Change Impact Analysis)*** 工具
 * 100 Percent Python
