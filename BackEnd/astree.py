@@ -22,7 +22,7 @@ class my_visitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         print("ClassDef :", node.name)
         ast.NodeVisitor.generic_visit(self, node)
-        # print("End :")
+        print("EndClass :")
 
     def visit_AsyncFunctionDef(self, node):
         print("AsyncFunctionDef :", node.name)
