@@ -15,7 +15,8 @@ node_matcher = NodeMatcher(graph=graph)
 def graph_constructor(filename):
     """向neo4j中构建图的函数"""
     num_of_lines = get_text_lines(filename)
-    scan = my_scanner(num_of_lines, filename)
+    lines = get_lines(filename)
+    scan = my_scanner(num_of_lines,lines,filename)
     my_scanner.scan_driver(scan)
 
 
@@ -24,6 +25,11 @@ def get_text_lines(filename):
     count = len(open(filename, 'r').readlines())
     return count
 
+
+def get_lines(filename):
+    """给定文件路径，读取文件中所有行的函数"""
+    lines=open(filename,'r').readlines()
+    return lines
 
 def get_line(filename, line_num):
     """给定文件路径以及行数，返回该行的数据"""
@@ -50,16 +56,18 @@ def class_node_scanner(string):
 
 class my_scanner:
 
-    def __init__(self, num_of_lines, filename):
+    def __init__(self, num_of_lines,lines,filename):
 
         self.num_of_lines = num_of_lines
         self.filename = filename
+        self.lines=lines
         self.location = 0
 
     def scan_driver(self):
         """第一轮 建立节点(包括 函数 类 以及 包)"""
         while self.location < self.num_of_lines:
-            string = get_line(self.filename, self.location)
+            # string = get_line(self.filename, self.location)
+            string = self.lines[self.location]
             if string.find("FunctionDef") != -1:
                 function_node_scanner(string)
             elif string.find("ClassDef") != -1:
@@ -69,7 +77,8 @@ class my_scanner:
         print("End First Round")
         """第二轮 建立节点之间的关系"""
         while self.location < self.num_of_lines:
-            string = get_line(self.filename, self.location)
+            #string = get_line(self.filename, self.location)
+            string = self.lines[self.location]
             if string.find("FunctionDef") != -1:
                self.function_relation_scanner(string,"Empty")
             elif string.find("Call") != -1:
@@ -87,7 +96,8 @@ class my_scanner:
         next_line = self.location + 1
         if next_line >= self.num_of_lines:
             return None 
-        father_class = get_line(self.filename, next_line)
+        # father_class = get_line(self.filename, next_line)
+        father_class = self.lines[next_line]
         """判断该类节点 是否有继承的父类"""
         if (father_class.find("Name") != -1) and (string.find("ClassDef")!=-1):
              """如果有继承的父类"""
@@ -144,7 +154,8 @@ class my_scanner:
             class_node = Node("Class", string[11:])
             graph.create(class_node)
         while((str_update.find("EndClass")==-1) and (self.location < self.num_of_lines)) :
-            str_input = get_line(self.filename, self.location)
+            # str_input = get_line(self.filename, self.location)
+            str_input = self.lines[self.location]
             str_update = str_input
             self.class_relation_scanner(str_input, class_node)
         
@@ -197,17 +208,20 @@ class my_scanner:
         if function_node is None:  # 若该函数在数据库中没有节点则创建新节点
             function_node = Node("Function", name=string[14:])
         while (str_update.find("EndFunction") == -1) & (self.location < self.num_of_lines):
-            str_input = get_line(self.filename, self.location)
+            # str_input = get_line(self.filename, self.location)
+            str_input =self.lines[self.location]
             str_update = str_input
             self.function_relation_scanner(str_input, function_node)
         # 由于已经到end行，回退一行
         self.location = self.location - 1
 
     def scan_call(self, node):
-        function_Name = get_line(self.filename, self.location)
+        # function_Name = get_line(self.filename, self.location)
+        function_Name =self.lines[self.location]
         while function_Name.find("Name :") == -1:
             self.location = self.location + 1
-            function_Name = get_line(self.filename, self.location)
+            # function_Name = get_line(self.filename, self.location)
+            function_Name = self.lines[self.location]
         if node == "Empty":
             return None
         """确认该函数节点 是否建立"""
