@@ -8,6 +8,7 @@ import astpretty
 """
 def ast_constructor(filename):
     f = open(filename)
+    print(filename)
     ast_obj = ast.parse(f.read(), mode="exec")
     f.close()
 

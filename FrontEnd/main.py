@@ -1,5 +1,4 @@
 # 程序主函数 2023/3/22
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *

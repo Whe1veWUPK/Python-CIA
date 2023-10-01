@@ -1,18 +1,26 @@
-
-
-
+def self(name):
+    print(name)
 class Cat(object):
+
+    def gi(name):
+        print(name)
     def cat(self,name,age):
-        class Baby:
-            def help(self,name, age):
-                print("Hello, I am GeiShin Impact Baby")
         print("The cat's name is "+name)
-        print("And it is "+age+" years old")
+    def dog(name):
+        print("The dog's name is "+ name)
+    def hello(name):
+        print("hello")
+    def hello1(name):
+        print("hello")
+    def hello2(name):
+        self(name)
+        print("hello")
 
+def function1(name):
+    print("Hello, this is "+name)
 
-    class dog(object):
-        def hello(self,name,age):
-            print("The dog's name is " + name)
-            print("And it is "+ age + " years old")
-
+class Pig(object):
+    def pig(name):
+        print("The pig's name is "+ name)
+        function1(name)
 

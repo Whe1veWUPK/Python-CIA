@@ -28,7 +28,13 @@ def get_text_lines(filename):
 
 def get_lines(filename):
     """给定文件路径，读取文件中所有行的函数"""
-    lines=open(filename,'r').readlines()
+    f = open(filename,'r')
+    line = f.readline()
+    lines =[]
+    while line:
+        line = line.strip('\n')
+        lines.append(line)
+        line=f.readline()
     return lines
 
 def get_line(filename, line_num):
@@ -64,7 +70,14 @@ class my_scanner:
         self.location = 0
 
     def scan_driver(self):
-        """第一轮 建立节点(包括 函数 类 以及 包)"""
+        
+        """首先向数据库中建立 文件节点"""
+        file_node = graph.nodes.match("File").where("_.name="+"'"+self.lines[self.location]+"'").first()
+        if file_node is None:
+           file_node=Node("File",name=self.lines[self.location])
+           graph.create(file_node)
+        self.location += 1
+        """第一轮 建立节点(包括 函数 类)"""
         while self.location < self.num_of_lines:
             # string = get_line(self.filename, self.location)
             string = self.lines[self.location]
@@ -72,21 +85,41 @@ class my_scanner:
                 function_node_scanner(string)
             elif string.find("ClassDef") != -1:
                 class_node_scanner(string)
+           
             self.location = self.location + 1
-        self.location = 0
-        print("End First Round")
+
+        self.location = 1
+        # print("End First Round")
         """第二轮 建立节点之间的关系"""
         while self.location < self.num_of_lines:
             #string = get_line(self.filename, self.location)
+            
             string = self.lines[self.location]
+            """如果是文件结构的第一层，将包节点与第一层的所有节点进行连接"""
+            """这里的连接 包括文件节点与 类节点 以及 函数节点之间的连接"""
             if string.find("FunctionDef") != -1:
-               self.function_relation_scanner(string,"Empty")
+                """建立文件节点与 第一层函数节点 之间的连接"""
+                function_node = graph.nodes.match("Function").where("_.name="+"'"+string[14:]+"'").first()
+                if function_node is None:
+                    function_node = Node("Function",name=string[14:])
+                    graph.create(function_node)
+                entity = Relationship(file_node,"includes function",function_node)
+                graph.create(entity)
+                self.function_relation_scanner(string,"Empty")
             elif string.find("Call") != -1:
-               self.function_relation_scanner(string,"Empty")
+                self.function_relation_scanner(string,"Empty")
             elif string.find("ClassDef") != -1 :
-               self.class_relation_scanner(string, "Empty")
+                """建立文件节点 与 第一层类 节点之间的连接"""
+                class_node = graph.nodes.match("Class").where("_.name="+"'"+string[11:]+"'").first()
+                if class_node is None:
+                    class_node = Node("Class",name = string[11:])
+                    graph.create(class_node)
+                entity = Relationship(file_node,"includes class",class_node)
+                graph.create(entity)
+                self.class_relation_scanner(string, "Empty")
             else:
                 self.location = self.location + 1
+           
         
         
     
@@ -128,6 +161,7 @@ class my_scanner:
                 entity = Relationship(node, "includes class", class_node)
                 graph.create(entity)   
             self.scan_class(string)
+            
         elif string.find("FunctionDef") != -1:
               if type(node) != type ("a") :
                   """如果当前已经是在一个类节点内 则需要对类和函数进行连接"""
@@ -141,10 +175,12 @@ class my_scanner:
                   """连接 类节点 和 函数节点"""
                   entity = Relationship(class_node, "includes function", function_node)
                   graph.create(entity)
-              self.scan_function(string)            
+              self.scan_function(string)  
+                        
         else:
             self.location = self.location + 1
-            return None
+           
+
         
     def scan_class(self, string):
         self.location = self.location + 1
@@ -159,6 +195,7 @@ class my_scanner:
             str_update = str_input
             self.class_relation_scanner(str_input, class_node)
         
+        self.location -= 1
 
 
         
@@ -168,8 +205,10 @@ class my_scanner:
     def function_relation_scanner(self, string, node):
         if string.find("FunctionDef") != -1:
             self.scan_function(string)
-        if string.find("Call") != -1:  # 发现函数之间的调用关系
+            
+        elif string.find("Call") != -1:  # 发现函数之间的调用关系
             self.scan_call(node)
+           
         # elif string.find("Name") != -1:
         #     global graph
         #     if node != "Empty":
@@ -192,13 +231,13 @@ class my_scanner:
                  entity = Relationship(function_node, "includes class", class_node)
                  graph.create(entity)
              self.scan_class(string)
-             
-        elif string.find("End") != -1:
-            self.location = self.location + 1
-            return None
         else:
-            self.location = self.location + 1
-            return None
+            self.location += 1 
+
+    
+    
+     
+       
 
     def scan_function(self, string):
         self.location = self.location + 1
@@ -212,8 +251,7 @@ class my_scanner:
             str_input =self.lines[self.location]
             str_update = str_input
             self.function_relation_scanner(str_input, function_node)
-        # 由于已经到end行，回退一行
-        self.location = self.location - 1
+        self.location -= 1
 
     def scan_call(self, node):
         # function_Name = get_line(self.filename, self.location)
@@ -226,11 +264,46 @@ class my_scanner:
             return None
         """确认该函数节点 是否建立"""
         function_node = graph.nodes.match("Function").where("_.name=" + "'" + function_Name[7:] + "'").first()
-        if function_node is None :
-              """如果所调用的函数节点为空 则进行建立"""
-              function_node = Node("Function", name = function_Name[7:])
-              graph.create(function_node)
-        
-        entity = Relationship(node, "calls", function_node)
-        graph.create(entity)
+        if function_node is None and function_Name[7:]!="self":
+              """如果所调用的函数节点为空 且不为类内部调用"""
 
+              return None
+        elif function_node is None and function_Name[7:]=="self":
+              """如果所调用的函数节点为空 且是类内部调用"""
+
+              function_Name = self.lines[self.location + 2]
+              function_node = graph.nodes.match("Function").where("_.name="+"'"+function_Name[7:]+"'").first()
+              entity = Relationship(node, "calls", function_node)
+              graph.create(entity)
+        elif function_node is not None and function_Name[7:]=="self":
+              """如果所调用的函数节点不为空 且名称就是self """
+              """则需进一步判断其是否是类的内部调用"""
+
+              temp_Index = self.location + 2
+              if temp_Index > self.num_of_lines:
+                  """如果越界 则说明一定是 名称为 self 的 function"""
+                  """建立关系后 返回"""
+                  entity = Relationship(node, "calls", function_node)
+                  graph.create(entity)
+                  return None
+              function_Name = self.lines[self.location + 2]
+              if function_Name[0:9]=="Attribute":
+                  """如果是类内部调用"""
+                  function_node = graph.nodes.match("Function").where("_.name="+"'"+function_Name[12:]+"'").first()
+                  entity = Relationship(node, "calls", function_node)
+                  graph.create(entity)                             
+              else:
+                  """如果不是类内部调用"""
+                  entity = Relationship(node, "calls", function_node)
+                  graph.create(entity)                            
+
+        elif function_node is not None and function_Name[7:]!="self":
+              """如果所调用的函数节点不为空 且名称中不是 self"""
+              """直接创建节点即可"""
+
+              entity = Relationship(node, "calls", function_node)
+              graph.create(entity)
+
+
+
+  
