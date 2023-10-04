@@ -203,7 +203,7 @@ class Ui_MainWindow(object):
             return
         else:
             tree = astree.ast_constructor(self.lineEdit.text())
-            visit = astree.my_visitor()
+            visit = astree.my_visitor(self.lineEdit.text())
             visit.visit(tree)
 
             f.seek(0)

@@ -1,3 +1,5 @@
+import sys
+
 def self(name):
     print(name)
 class Cat(object):

@@ -1,5 +1,6 @@
 import sys
 import ast
+import astunparse as astunparse
 import astpretty
 
 """
@@ -16,12 +17,15 @@ def ast_constructor(filename):
 
 
 class my_visitor(ast.NodeVisitor):
+    def __init__(self,filepath):
+        self.filepath = filepath
+
     def generic_visit(self, node):
         print(type(node).__name__)
         ast.NodeVisitor.generic_visit(self, node)
 
     def visit_ClassDef(self, node):
-        print("ClassDef :", node.name)
+        print("ClassDef : "+self.filepath+" "+node.name+" StartLine: "+str(node.lineno) + " EndLine: "+str(node.end_lineno))
         ast.NodeVisitor.generic_visit(self, node)
         print("EndClass :")
 
@@ -46,12 +50,12 @@ class my_visitor(ast.NodeVisitor):
         # print("End :")
 
     def visit_FunctionDef(self, node):
-        print("FunctionDef :", node.name)
+        print("FunctionDef : "+self.filepath+" "+node.name+" StartLine: "+str(node.lineno) + " EndLine: " + str(node.end_lineno))
         ast.NodeVisitor.generic_visit(self, node)
         print("EndFunction :")
 
     def visit_Name(self, node):
-        print('Name :', node.id)
+        print('Name : '+self.filepath+" "+node.id+" StartLine: " + str(node.lineno) + " EndLine: " + str(node.end_lineno))
 
     def visit_Constant(self, node):
         print("Constant :", node.value)
@@ -102,6 +106,9 @@ class my_visitor(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
     #         #print("End :")
+    def visit_Attribute(self, node):
+        print("Attribute : ")
+        ast.NodeVisitor.generic_visit(self, node)
 
     def visit_Num(self, node):
         print('Num :', node.__dict__['n'])
@@ -466,3 +473,5 @@ class my_visitor(ast.NodeVisitor):
 # sys.stdout = open(path, 'w')
 # visit = my_visitor()
 # visit.visit(tree)
+# tree = ast_constructor("test.py")
+# astpretty.pprint(tree)
