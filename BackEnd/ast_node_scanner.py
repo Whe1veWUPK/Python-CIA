@@ -76,43 +76,48 @@ def class_node_scanner(string):
 
 class my_scanner:
 
-    def __init__(self, num_of_lines,lines,filename):
+    def __init__(self, num_of_lines,lines,filename,round):
 
         self.num_of_lines = num_of_lines
         self.filename = filename
         self.lines=lines
         self.location = 0
+        self.round = round
         
 
     def scan_driver(self):
-        
-        """首先向数据库中建立 文件节点"""
-        file_node = graph.nodes.match("File").where("_.Path="+"'"+self.lines[self.location]+"'").first()
-        if file_node is None:
-           file_node=Node("File",Path = self.lines[self.location])
-           graph.create(file_node)
-        self.location += 1
-        """第一轮 建立节点(包括 函数 类)"""
-        while self.location < self.num_of_lines:
-            # string = get_line(self.filename, self.location)
-            string = self.lines[self.location]
-            if string.find("FunctionDef : ") != -1:
+        if self.round==1:
+           """是第一轮 则建立节点"""
+           """首先向数据库中建立 文件节点"""
+           file_node = graph.nodes.match("File").where("_.Path="+"'"+self.lines[self.location]+"'").first()
+           if file_node is None:
+             file_node=Node("File",Path = self.lines[self.location])
+             graph.create(file_node)
+           self.location += 1
+           """第一轮 建立节点(包括 函数 类)"""
+           while self.location < self.num_of_lines:
+               # string = get_line(self.filename, self.location)
+               string = self.lines[self.location]
+               if string.find("FunctionDef : ") != -1:
                 function_node_scanner(string)
-            elif string.find("ClassDef : ") != -1:
+               elif string.find("ClassDef : ") != -1:
                 class_node_scanner(string)
            
-            self.location = self.location + 1
-
-        self.location = 1
-        # print("End First Round")
-        """第二轮 建立节点之间的关系"""
-        while self.location < self.num_of_lines:
+               self.location = self.location + 1
+        elif self.round==2:
+           """是第二轮 则建立节点之间的关系"""
+           self.location = 0 
+           file_node = graph.nodes.match("File").where("_.Path="+"'"+self.lines[self.location]+"'").first()
+           self.location = 1
+       
+           """第二轮 建立节点之间的关系"""
+           while self.location < self.num_of_lines:
             #string = get_line(self.filename, self.location)
             
-            string = self.lines[self.location]
-            """如果是文件结构的第一层，将包节点与第一层的所有节点进行连接"""
-            """这里的连接 包括文件节点与 类节点 以及 函数节点之间的连接"""
-            if string.find("FunctionDef : ") != -1:
+              string = self.lines[self.location]
+              """如果是文件结构的第一层，将包节点与第一层的所有节点进行连接"""
+              """这里的连接 包括文件节点与 类节点 以及 函数节点之间的连接"""
+              if string.find("FunctionDef : ") != -1:
                 """建立文件节点与 第一层函数节点 之间的连接"""
                 info = string[14:]
                 info_List = info.split(' ')                
@@ -125,9 +130,9 @@ class my_scanner:
                 entity = Relationship(file_node,"includes function",function_node)
                 graph.create(entity)
                 self.function_relation_scanner(string,"Empty")
-            elif string.find("Call") != -1:
+              elif string.find("Call") != -1:
                 self.function_relation_scanner(string,"Empty")
-            elif string.find("ClassDef") != -1 :
+              elif string.find("ClassDef") != -1 :
                 """建立文件节点 与 第一层类 节点之间的连接"""
                 info = string[11:]
                 info_List = info.split(' ')
@@ -139,7 +144,7 @@ class my_scanner:
                 entity = Relationship(file_node,"includes class",class_node)
                 graph.create(entity)
                 self.class_relation_scanner(string, "Empty")
-            else:
+              else:
                 self.location = self.location + 1
            
         
