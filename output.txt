@@ -102,3 +102,18 @@ Name : D:/PythonProjects/Python-CIA/test.py function1 StartLine: 27 EndLine: 27
 Name : D:/PythonProjects/Python-CIA/test.py name StartLine: 27 EndLine: 27
 EndFunction :
 EndClass :
+FunctionDef : D:/PythonProjects/Python-CIA/test.py justForTest StartLine: 29 EndLine: 31
+arguments :
+Expr :
+Call :
+Name : D:/PythonProjects/Python-CIA/test.py print StartLine: 30 EndLine: 30
+Constant : hello
+Expr :
+Call :
+Name : D:/PythonProjects/Python-CIA/test.py ast StartLine: 31 EndLine: 31
+Load :
+Attribute : node
+Load :
+Attribute : print
+Constant : hello
+EndFunction :

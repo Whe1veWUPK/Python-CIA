@@ -26,3 +26,7 @@ class Pig(object):
         print("The pig's name is "+ name)
         function1(name)
 
+def justForTest():
+    print("hello")
+    
+

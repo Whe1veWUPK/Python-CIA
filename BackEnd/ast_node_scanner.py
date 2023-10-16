@@ -1,5 +1,6 @@
 from py2neo import Graph, Node, Relationship, NodeMatcher
-
+import os
+import os.path
 '''
 用于搜索生成的节点信息文件
 向neo4j中建立节点
@@ -9,6 +10,9 @@ from py2neo import Graph, Node, Relationship, NodeMatcher
 num_of_function = 0
 graph = Graph('bolt://localhost:7687', auth=('neo4j', '12345678'))
 node_matcher = NodeMatcher(graph=graph)
+
+
+
 
 
 # 调用该函数即可直接开始建立
