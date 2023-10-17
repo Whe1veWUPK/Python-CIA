@@ -397,8 +397,33 @@ class my_scanner:
                     file_node = node
                     break
             if file_node is not None:
+                #graph.create(Node("File Node is not None"))
                 """如果文件节点不空"""
                 class_nodes=find_linked_nodes(file_node)
+                class_node = None
+                attr1=attr_list[0]
+                attr2=attr_list[1]
+                attr1=attr1[12:]
+                attr2=attr2[12:]
+
+                for node in class_nodes:
+                    """找出合适的类节点"""
+                    if (node['Path']==file_node['Path']) & (node['Name']==attr1):
+                         class_node = node
+                         break
+                if class_node is not None:    
+                   #graph.create(Node("Class Node is Not None"))
+                   function_nodes=find_linked_nodes(class_node)
+                   function_node=None
+                   for node in function_nodes:
+                      """找出最终的函数节点"""
+                      #graph.create(Node("Function Node",Path=file_node['Path'],Name=attr2))
+                      if(node['Path']==file_node['Path'])&(node['Name']==attr2):
+                         function_node = node
+                         """建立关系"""
+                         graph.create(Relationship(father_node,"calls",function_node))
+                         break
+
                 
             
         # else:

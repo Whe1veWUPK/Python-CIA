@@ -187,9 +187,8 @@ class Ui_MainWindow(object):
         from BackEnd import file_scanner
         #dir_path = self.lineEdit.text()
         # 找出目录下的所有.py文件
-        file_scanner.get_py(r'd:\PythonProjects\Python-CIA\BackEnd')
-        for file in file_scanner.py_files:
-            print(file)
+        file_scanner.get_py(r'd:\PythonProjects\Python-CIA\ForTest')
+
         for file in file_scanner.py_files:
             # 构造ast
             f = open('ast.txt', 'w')

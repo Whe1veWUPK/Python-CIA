@@ -1,2 +1,72 @@
-d:\PythonProjects\Python-CIA\BackEnd\__init__.py
+d:\PythonProjects\Python-CIA\ForTest\test1.py
 Module
+ImportFrom : forTest
+Alias : test2
+ClassDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test StartLine: 2 EndLine: 6
+FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py __init__ StartLine: 3 EndLine: 4
+arguments :
+arg : self
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 4 EndLine: 4
+Constant : hello
+EndCall :
+Constant : None
+EndFunction :
+FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test11 StartLine: 5 EndLine: 6
+arguments :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 6 EndLine: 6
+Constant : hello
+EndCall :
+EndFunction :
+EndClass :
+FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest StartLine: 10 EndLine: 11
+arguments :
+arg : name
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 11 EndLine: 11
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py name StartLine: 11 EndLine: 11
+EndCall :
+EndFunction :
+FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest2 StartLine: 13 EndLine: 14
+arguments :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 14 EndLine: 14
+Constant : Hello
+EndCall :
+EndFunction :
+FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test1 StartLine: 16 EndLine: 21
+arguments :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py test StartLine: 17 EndLine: 17
+Load :
+Attribute : test11
+EndCall :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest StartLine: 18 EndLine: 18
+Constant : name
+EndCall :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 19 EndLine: 19
+Constant : test
+EndCall :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest2 StartLine: 20 EndLine: 20
+EndCall :
+Expr :
+Call :
+Name : d:\PythonProjects\Python-CIA\ForTest\test1.py test2 StartLine: 21 EndLine: 21
+Load :
+Attribute : test
+Load :
+Attribute : test11
+EndCall :
+EndFunction :
