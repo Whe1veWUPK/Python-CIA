@@ -1,7 +1,8 @@
+from forTest import test2
 class test:
     def __init__(self) -> None:
         print("hello")        
-    def test1():
+    def test11():
         print("hello")
 
 
@@ -13,7 +14,8 @@ def justForTest2():
     print("Hello")
 
 def test1():
-    test.test2.test1()
+    test.test11()
     justForTest("name");
     print("test")
     justForTest2()
+    test2.test.test1()

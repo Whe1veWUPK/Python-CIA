@@ -107,9 +107,9 @@ class my_scanner:
            while self.location < self.num_of_lines:
                # string = get_line(self.filename, self.location)
                string = self.lines[self.location]
-               if string.find("FunctionDef : ") != -1:
+               if string[0:13]=="FunctionDef :":
                 function_node_scanner(string)
-               elif string.find("ClassDef : ") != -1:
+               elif string[0:10]=="ClassDef :" :
                 class_node_scanner(string)
                
                self.location = self.location + 1
@@ -126,7 +126,7 @@ class my_scanner:
               string = self.lines[self.location]
               """如果是文件结构的第一层，将包节点与第一层的所有节点进行连接"""
               """这里的连接 包括文件节点与 类节点 以及 函数节点之间的连接"""
-              if string.find("FunctionDef : ") != -1:
+              if string[0:13]=="FunctionDef :":
                 """建立文件节点与 第一层函数节点 之间的连接"""
                 info = string[14:]
                 info_List = info.split(' ')                
@@ -137,9 +137,9 @@ class my_scanner:
                 entity = Relationship(file_node,"includes function",function_node)
                 graph.create(entity)
                 self.function_relation_scanner(string,"Empty")
-              elif string.find("Call :") != -1:
+              elif string[0:6]=="Call :":
                 self.scan_call(file_node)
-              elif string.find("ClassDef") != -1 :
+              elif string[0:10]=="ClassDef :" :
                 """建立文件节点 与 第一层类 节点之间的连接"""
                 info = string[11:]
                 info_List = info.split(' ')
@@ -168,7 +168,7 @@ class my_scanner:
         info = string[11:]
         info_List = info.split(' ')
         """判断该类节点 是否有继承的父类"""
-        if (father_class.find("Name : ") != -1) and (string.find("ClassDef : ")!=-1):
+        if (father_class[0:6]=="Name :") and (string[0:10]=="ClassDef :"):
              """如果有继承的父类"""
              father_info = father_class[7:]
              father_Info_List = father_info.split(' ')
@@ -186,7 +186,7 @@ class my_scanner:
              entity = Relationship(father_node,"derives",son_node)
              graph.create(entity)
 
-        if string.find("ClassDef : ") != -1:
+        if string[0:10]=="ClassDef :":
             if type(node) != type("a"):
                 """如果当前已经是在一个类节点内了 则需要对类和类进行连接"""
                 """这里的判断意思是 初始node的类型是一个 string 如果被赋予了Node 类型 则表示已经在一个类的节点内部了"""
@@ -200,7 +200,7 @@ class my_scanner:
                 graph.create(entity)   
             self.scan_class(string)
             
-        elif string.find("FunctionDef : ") != -1:
+        elif string[0:13]=="FunctionDef :":
               if type(node) != type ("a") :
                   """如果当前已经是在一个类节点内 则需要对类和函数进行连接"""
                   """判断意思同上"""
@@ -231,7 +231,7 @@ class my_scanner:
         if class_node is None :
             class_node = Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
             graph.create(class_node)
-        while((str_update.find("EndClass :")==-1) and (self.location < self.num_of_lines)) :
+        while(str_update[0:10]!="EndClass :") and (self.location < self.num_of_lines) :
             # str_input = get_line(self.filename, self.location)
             str_input = self.lines[self.location]
             str_update = str_input
@@ -246,10 +246,10 @@ class my_scanner:
 
     def function_relation_scanner(self, string, node):
         
-        if string.find("FunctionDef : ") != -1:
+        if string[0:13]=="FunctionDef :":
             self.scan_function(string)
             
-        elif string.find("Call :") != -1:  # 发现函数之间的调用关系
+        elif string[0:6]=="Call :":  # 发现函数之间的调用关系
             self.scan_call(node)
            
         # elif string.find("Name") != -1:
@@ -261,7 +261,7 @@ class my_scanner:
         #     else:
         #         name_node = Node("Name", name=string[7:])
         #         graph.create(name_node)
-        elif string.find("ClassDef : ") != -1:
+        elif string[0:10]=="ClassDef :":
              function_node = node
              if type(function_node) != type("a"):
                  """如果已经在函数节点内部 且 该函数节点不为空"""
@@ -293,7 +293,7 @@ class my_scanner:
         function_node = graph.nodes.match("Function",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
         if function_node is None:  # 若该函数在数据库中没有节点则创建新节点
             function_node = Node("Function", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
-        while (str_update.find("EndFunction :") == -1) & (self.location < self.num_of_lines):
+        while ((str_update[0:13]!="EndFunction :") & (self.location < self.num_of_lines)):
             # str_input = get_line(self.filename, self.location)
             str_input =self.lines[self.location]
             str_update = str_input
@@ -310,35 +310,97 @@ class my_scanner:
         name_list = []
         attr_list = []
         str_update = "Go"
-        while((str_update.find("EndCall :")==-1) & (self.location < self.num_of_lines)):
+        while((str_update[0:9]!="EndCall :") & (self.location < self.num_of_lines)):
             str_update = self.lines[self.location]
             """找到函数名 或者是类名或者包名"""
-            if str_update.find("Name :")!= -1:
+            if str_update[0:6]=="Name :":
                name_list.append(str_update)
             """找到类或者包的成员名"""
-            if str_update.find("Attribute :"):
+            if str_update[0:11]=="Attribute :":
                attr_list.append(str_update)
             """更新当前位置"""
             self.location += 1
         """从 while 中退出 则此时应该是 扫描到了EndCall"""
         end_postion =  self.location
-        self.location += 1
         
         attr_count =len(attr_list)
+        # graph.create(Node("Attr_Count",Count=attr_count))     
         #graph.create(Node("Attr_Count",attr_count))
         # graph.create(Node("Name_Count",name_list.count()))
-        if(attr_count==0):
-            """无多级调用 则可能是类内部调用或者是 调用的独立于类之外的函数"""
+        if attr_count==0:
+            """无多级 则可能是类内部调用或者是 函数内部调用"""
             #graph.create(Node("进入"))
-            function_nodes_in_class = find_linked_nodes(father_node)
             function_name = name_list[0]
-            for node in function_nodes_in_class:
-                if node['Name'] == function_name :
-                    """如果找到对应的节点 则创建关系"""
-                    call_relation = Relationship(father_node,"calls",node)
-                    graph.create(call_relation)
+            function_path=function_name[7:]
+            info_list = function_path.split(' ')
+            """筛选出Function 函数所在文件路径 以及 名称都符合的"""
+            function_node = graph.nodes.match("Function",Path=info_list[0],Name=info_list[1]).first()
+            if function_node is not None:
+                """如果有匹配的项，则进行连接"""
+                graph.create(Relationship(father_node,"calls",function_node))
+        elif attr_count==1:
+            """这种情况可能是调用类的成员函数 或者是其他文件的函数"""
+            test_name = name_list[0]
+            test_path=test_name[7:]
+            info_list = test_path.split(' ')
+            attr_init=attr_list[0]
+            attr_name=attr_init[12:]
+            
+            """首先测试是否调用的同文件下类的成员函数"""
+            """同文件下类的 路径应与调用者路径相同"""
+            class_node = graph.nodes.match("Class",Path=info_list[0],Name=info_list[1]).first()
+            if class_node is not None:
+                """找到所有与类节点有关系的节点"""
+                # graph.create(Node("Class_node is not None"))
+                function_nodes = find_linked_nodes(class_node)
+                #graph.create(Node(str(len(function_nodes))))
+                #graph.create(Node("Target",Path=info_list[0],Name=attr_name))
+                for node in function_nodes:
+                    """找到路径与 名称 都匹配的函数"""
+                    if (node['Path']== info_list[0]) & (node['Name'] == attr_name):
+                         graph.create(Relationship(father_node,"calls",node))
+                         break
+            else:
+                """如果第一级不是类节点，那么则是文件节点"""
+                file_nodes = graph.nodes.match("File")
+                file_node = None
+                for node in file_nodes:
+                    """找到合适的文件节点"""
+                    if node['Path'].find(info_list[1])!=-1:
+                        file_node = node
+                        break
+                #graph.create(Node("Is Node"))
+                if file_node is not None:
+                    #graph.create(Node("Is not None"))
+                    """如果文件节点不空"""
+                    """找到所有与该文件节点有一层联系的节点,attr为1 则该被调用函数一定与第一层文件相连接"""
+                    function_nodes = find_linked_nodes(file_node)
+                    
+                    for node in function_nodes:
+                        """找到路径名称都相同的节点"""
+                        if(node['Path']==file_node['Path'])&(node['Name']==attr_name):
+                            graph.create(Relationship(father_node,"calls",node))
+                            break
+        else:
+            """其它级 忽略"""
+            if attr_count >= 3:
+                return  
+            """此时 的结构是 文件.类.函数"""
+            file_line = name_list[0]
+            file_info = file_line[7:]
+            file_info_list=file_info.split(' ')
+            file_nodes = graph.nodes.match("File")
+            file_node = None
+            for node in file_nodes:
+                """找出合适的文件节点"""
+                if node['Path'].find(file_info_list[1])!=-1:
+                    file_node = node
                     break
-
+            if file_node is not None:
+                """如果文件节点不空"""
+                class_nodes=find_linked_nodes(file_node)
+                
+            
         # else:
         #     """有多级调用 则可能是 import的包 或者是 类"""
         #     name = name_list[0]

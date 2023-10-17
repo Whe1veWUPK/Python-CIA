@@ -8,7 +8,7 @@ import astpretty
 写入到ast_nodes.txt文件中
 """
 def ast_constructor(filename):
-    f = open(filename)
+    f = open(filename,encoding='utf-8')
     print(filename)
     ast_obj = ast.parse(f.read(),mode="exec")
     f.close()
