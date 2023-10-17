@@ -1,6 +1,3 @@
-
-
-
 class test:
     def __init__(self) -> None:
         print("hello")        
@@ -11,6 +8,7 @@ class test:
 
 def justForTest(name):
     print(name)
+    
 def justForTest2():
     print("Hello")
 

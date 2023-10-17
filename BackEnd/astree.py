@@ -10,7 +10,7 @@ import astpretty
 def ast_constructor(filename):
     f = open(filename)
     print(filename)
-    ast_obj = ast.parse(f.read(), mode="exec")
+    ast_obj = ast.parse(f.read(),mode="exec")
     f.close()
 
     return ast_obj
@@ -37,7 +37,7 @@ class my_visitor(ast.NodeVisitor):
     def visit_Call(self, node):
         print("Call :")
         ast.NodeVisitor.generic_visit(self, node)
-        # print("End :")
+        print("EndCall :")
 
     def visit_Import(self, node):
         print("Import :")
@@ -109,6 +109,7 @@ class my_visitor(ast.NodeVisitor):
     def visit_Attribute(self, node):
         print("Attribute : ")
         ast.NodeVisitor.generic_visit(self, node)
+        print("attr : ", node.attr)
 
     def visit_Num(self, node):
         print('Num :', node.__dict__['n'])
@@ -466,12 +467,18 @@ class my_visitor(ast.NodeVisitor):
         print("AsyncWith :")
         ast.NodeVisitor.generic_visit(self, node)
         # print("End :")
+# f=open("ast.txt",'w')
+# path=r'd:\PythonProjects\Python-CIA\test.py'
+# sys.stdout=f
+# tree = ast_constructor(path)
 
-
-# tree = ast_constructor(sys.path[0]+r"\BackEnd\astTest.py")
-# path = sys.path[0]+r'\BackEnd\ast_nodes.txt'
-# sys.stdout = open(path, 'w')
-# visit = my_visitor()
+# visit = my_visitor(path)
 # visit.visit(tree)
-# tree = ast_constructor("test.py")
-# astpretty.pprint(tree)
+# tree = ast_constructor(r'test.py')
+# # path = sys.path[0]+r'\BackEnd\ast_nodes.txt'
+# # sys.stdout = open(path, 'w')
+# visit = my_visitor(r'test.py')
+# visit.visit(tree)
+# tree = ast_constructor(r'test.py')
+
+# sys.stdout=open(r'D:\PythonProjects\Python-CIA\output.txt','w')

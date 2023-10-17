@@ -7,20 +7,20 @@ import os.path
 包括函数节点，(包节点，类节点)
 同时建立各个等级节点之间的调用情况
 '''
-num_of_function = 0
+
 graph = Graph('bolt://localhost:7687', auth=('neo4j', '12345678'))
-node_matcher = NodeMatcher(graph=graph)
+
 
 
 
 
 
 # 调用该函数即可直接开始建立
-def graph_constructor(filename):
+def graph_constructor(filename,round):
     """向neo4j中构建图的函数"""
     num_of_lines = get_text_lines(filename)
     lines = get_lines(filename)
-    scan = my_scanner(num_of_lines,lines,filename)
+    scan = my_scanner(num_of_lines,lines,filename,round)
     my_scanner.scan_driver(scan)
 
 
@@ -54,9 +54,7 @@ def function_node_scanner(string):
     info = string[14:]
     info_List = info.split(' ')
     function_node = None
-    function_node = graph.nodes.match("Function").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                       ,"_.EndLine="+"'"+info_List[5]+"'"
-                                                       ).first()
+    function_node = graph.nodes.match("Function",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
     if function_node is None:
         """如果没有在数据库中建立 则进行建立"""  
         function_node = Node("Function",Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -67,8 +65,7 @@ def class_node_scanner(string):
     info = string[11:]
     info_List = info.split(' ')
     class_node = None
-    class_node=graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+    class_node=graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
     if class_node is None: 
         """若没有则创建新节点"""
         class_node=Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -86,10 +83,11 @@ class my_scanner:
         
 
     def scan_driver(self):
-        if self.round==1:
+        if self.round == 1:
            """是第一轮 则建立节点"""
            """首先向数据库中建立 文件节点"""
-           file_node = graph.nodes.match("File").where("_.Path="+"'"+self.lines[self.location]+"'").first()
+           self.location = 0
+           file_node = graph.nodes.match("File",Path=self.lines[self.location]).first()
            if file_node is None:
              file_node=Node("File",Path = self.lines[self.location])
              graph.create(file_node)
@@ -102,12 +100,12 @@ class my_scanner:
                 function_node_scanner(string)
                elif string.find("ClassDef : ") != -1:
                 class_node_scanner(string)
-           
+               
                self.location = self.location + 1
         elif self.round==2:
            """是第二轮 则建立节点之间的关系"""
            self.location = 0 
-           file_node = graph.nodes.match("File").where("_.Path="+"'"+self.lines[self.location]+"'").first()
+           file_node = graph.nodes.match("File",Path=self.lines[self.location]).first()
            self.location = 1
        
            """第二轮 建立节点之间的关系"""
@@ -121,9 +119,7 @@ class my_scanner:
                 """建立文件节点与 第一层函数节点 之间的连接"""
                 info = string[14:]
                 info_List = info.split(' ')                
-                function_node = graph.nodes.match("Function").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                       ,"_.EndLine="+"'"+info_List[5]+"'"
-                                                       ).first()
+                function_node = graph.nodes.match("Function",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
                 if function_node is None:
                     function_node = Node("Function",Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
                     graph.create(function_node)
@@ -136,9 +132,9 @@ class my_scanner:
                 """建立文件节点 与 第一层类 节点之间的连接"""
                 info = string[11:]
                 info_List = info.split(' ')
-                class_node = graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
-                if class_node is None:
+                class_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
+                if class_node == None:
+                    
                     class_node = Node("Class",Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
                     graph.create(class_node)
                 entity = Relationship(file_node,"includes class",class_node)
@@ -165,13 +161,12 @@ class my_scanner:
              """如果有继承的父类"""
              father_info = father_class[7:]
              father_Info_List = father_info.split(' ')
-             father_node = graph.nodes.match("Class").where("_.Name="+"'"+father_Info_List[1]+"'").first()
+             father_node = graph.nodes.match("Class",Name=father_Info_List[1]).first()
              if father_node is None:
                  """如果 父类节点 还没有建立 则先在数据库中进行建立"""
                  father_node = Node("Class",Path = "",Name = father_Info_List[1],StartLine = "",EndLine = "")
                  graph.create(father_node)
-             son_node = graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+             son_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
              if son_node is None:
                  """如果 子类节点 还没有建立 则先在数据库中进行建立"""
                  son_node = Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -184,8 +179,7 @@ class my_scanner:
             if type(node) != type("a"):
                 """如果当前已经是在一个类节点内了 则需要对类和类进行连接"""
                 """这里的判断意思是 初始node的类型是一个 string 如果被赋予了Node 类型 则表示已经在一个类的节点内部了"""
-                class_node = graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+                class_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
                 if class_node is None :
                      """节点为空 则在neo4j 数据库中进行创建"""
                      class_node = Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -202,8 +196,7 @@ class my_scanner:
                   class_node = node
                   function_info = string[14:]
                   info_List = function_info.split(' ')
-                  function_node = graph.nodes.match("Function").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+                  function_node = graph.nodes.match("Function",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
                   if function_node is None :
                       """函数节点不存在则进行创建"""
                       function_node = Node("Function", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -223,8 +216,7 @@ class my_scanner:
         str_update = "Go"
         info = string[11:]
         info_List = info.split(' ')
-        class_node = graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+        class_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
         if class_node is None :
             class_node = Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
             graph.create(class_node)
@@ -264,8 +256,7 @@ class my_scanner:
                  """如果已经在函数节点内部 且 该函数节点不为空"""
                  class_Info = string[11:]
                  info_List = class_Info.split(' ')
-                 class_node = graph.nodes.match("Class").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+                 class_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
                  if class_node is None:
                      """如果 函数内部所含的类节点还未在数据库中创建 则先在数据库中创建类节点"""
                      class_node = Node("Class",Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
@@ -288,8 +279,7 @@ class my_scanner:
         info = string[14:]
         info_List = info.split(' ')
         # 确认该函数节点是否建立，在neo库中进行搜索
-        function_node = graph.nodes.match("Function").where("_.Path=" + "'" + info_List[0] + "'","_.Name=" + "'" + info_List[1] + "'","_.StartLine="+"'"+info_List[3]+"'"
-                                                      ,"_.EndLine="+"'"+info_List[5]+"'").first()
+        function_node = graph.nodes.match("Function",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
         if function_node is None:  # 若该函数在数据库中没有节点则创建新节点
             function_node = Node("Function", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
         while (str_update.find("EndFunction :") == -1) & (self.location < self.num_of_lines):
@@ -309,7 +299,7 @@ class my_scanner:
         if node == "Empty":
             return None
         """确认该函数节点 是否建立"""
-        function_node = graph.nodes.match("Function").where("_.name=" + "'" + function_Name[7:] + "'").first()
+        function_node = graph.nodes.match("Function",Name=function_Name[7:]).first()
         if function_node is None and function_Name[7:]!="self":
               """如果所调用的函数节点为空 且不为类内部调用"""
               # graph.create(Node("Success", name = "1" ))
@@ -318,7 +308,7 @@ class my_scanner:
               """如果所调用的函数节点为空 且是类内部调用"""
               # graph.create(Node("Success", name = "2" ))
               function_Name = self.lines[self.location + 2]
-              function_node = graph.nodes.match("Function").where("_.name="+"'"+function_Name[7:]+"'").first()
+              function_node = graph.nodes.match("Function",Name=function_Name[7:]).first()
               entity = Relationship(node, "calls", function_node)
               graph.create(entity)
         elif function_node is not None and function_Name[7:].find("self")!=-1:
@@ -353,3 +343,5 @@ class my_scanner:
 
 
   
+# graph_constructor('ast.txt',1)
+# graph_constructor('ast.txt',2)
