@@ -1,7 +1,9 @@
-from py2neo import Graph, Node, Relationship, NodeMatcher
+
+
+from py2neo import Graph, Node, Relationship, NodeMatcher,RelationshipMatcher
 import os
 import os.path
-import database_helper
+
 '''
 用于搜索生成的节点信息文件
 向neo4j中建立节点
@@ -10,9 +12,17 @@ import database_helper
 '''
 
 graph = Graph('bolt://localhost:7687', auth=('neo4j', '12345678'))
+node_matcher = NodeMatcher(graph)
+relation_matcher = RelationshipMatcher(graph)
 
-
-
+"""获取与某节点有关系的所有节点（一层）"""
+def find_linked_nodes(node):
+    linked_nodes = set()
+    matched_relations = relation_matcher.match(nodes=(None,node))
+    linked_nodes.update([relation.start_node for relation in matched_relations])
+    matched_relations = relation_matcher.match(nodes=(node,None))
+    linked_nodes.update([relation.end_node for relation in matched_relations])
+    return linked_nodes
 
 
 
@@ -314,13 +324,13 @@ class my_scanner:
         end_postion =  self.location
         self.location += 1
         
-        attr_count = attr_list.count()
-        graph.create(Node("Attr_Count",attr_count))
-        graph.create(Node("Name_Count",name_list.count()))
+        attr_count =len(attr_list)
+        #graph.create(Node("Attr_Count",attr_count))
+        # graph.create(Node("Name_Count",name_list.count()))
         if(attr_count==0):
             """无多级调用 则可能是类内部调用或者是 调用的独立于类之外的函数"""
             #graph.create(Node("进入"))
-            function_nodes_in_class = database_helper.find_linked_nodes(father_node)
+            function_nodes_in_class = find_linked_nodes(father_node)
             function_name = name_list[0]
             for node in function_nodes_in_class:
                 if node['Name'] == function_name :
