@@ -1,6 +1,7 @@
 from py2neo import Graph, Node, Relationship, NodeMatcher
 import os
 import os.path
+import database_helper
 '''
 用于搜索生成的节点信息文件
 向neo4j中建立节点
@@ -126,8 +127,8 @@ class my_scanner:
                 entity = Relationship(file_node,"includes function",function_node)
                 graph.create(entity)
                 self.function_relation_scanner(string,"Empty")
-              elif string.find("Call") != -1:
-                self.function_relation_scanner(string,"Empty")
+              elif string.find("Call :") != -1:
+                self.scan_call(file_node)
               elif string.find("ClassDef") != -1 :
                 """建立文件节点 与 第一层类 节点之间的连接"""
                 info = string[11:]
@@ -238,7 +239,7 @@ class my_scanner:
         if string.find("FunctionDef : ") != -1:
             self.scan_function(string)
             
-        elif string.find("Call : ") != -1:  # 发现函数之间的调用关系
+        elif string.find("Call :") != -1:  # 发现函数之间的调用关系
             self.scan_call(node)
            
         # elif string.find("Name") != -1:
@@ -289,56 +290,60 @@ class my_scanner:
             self.function_relation_scanner(str_input, function_node)
         self.location -= 1
 
-    def scan_call(self, node):
+    def scan_call(self, father_node):
         # function_Name = get_line(self.filename, self.location)
-        function_Name =self.lines[self.location]
-        while function_Name.find("Name :") == -1:
-            self.location = self.location + 1
-            # function_Name = get_line(self.filename, self.location)
-            function_Name = self.lines[self.location]
-        if node == "Empty":
-            return None
-        """确认该函数节点 是否建立"""
-        function_node = graph.nodes.match("Function",Name=function_Name[7:]).first()
-        if function_node is None and function_Name[7:]!="self":
-              """如果所调用的函数节点为空 且不为类内部调用"""
-              # graph.create(Node("Success", name = "1" ))
-              return None
-        elif function_node is None and function_Name[7:].find("self")==-1:
-              """如果所调用的函数节点为空 且是类内部调用"""
-              # graph.create(Node("Success", name = "2" ))
-              function_Name = self.lines[self.location + 2]
-              function_node = graph.nodes.match("Function",Name=function_Name[7:]).first()
-              entity = Relationship(node, "calls", function_node)
-              graph.create(entity)
-        elif function_node is not None and function_Name[7:].find("self")!=-1:
-              """如果所调用的函数节点不为空 且名称就是self """
-              """则需进一步判断其是否是类的内部调用"""
-              # graph.create(Node("Success", name = "3" ))
-              temp_Index = self.location + 2
-              if temp_Index > self.num_of_lines:
-                  """如果越界 则说明一定是 名称为 self 的 function"""
-                  """建立关系后 返回"""
-                  entity = Relationship(node, "calls", function_node)
-                  graph.create(entity)
-                  return None
-              function_Name = self.lines[self.location + 2]
-              if function_Name[0:8]=="Attribute":
-                  """如果是类内部调用"""
-                  function_node = graph.nodes.match("Function").where("_.name="+"'"+function_Name[12:]+"'").first()
-                  entity = Relationship(node, "calls", function_node)
-                  graph.create(entity)                             
-              else:
-                  """如果不是类内部调用"""
-                  entity = Relationship(node, "calls", function_node)
-                  graph.create(entity)                            
+        #graph.create(Node("InCall"))
+        """向下扫描一行 开始扫描"""
+        self.location += 1
+        """记录call 部分内部的初始位置"""
+        start_position = self.location 
+        name_list = []
+        attr_list = []
+        str_update = "Go"
+        while((str_update.find("EndCall :")==-1) & (self.location < self.num_of_lines)):
+            str_update = self.lines[self.location]
+            """找到函数名 或者是类名或者包名"""
+            if str_update.find("Name :")!= -1:
+               name_list.append(str_update)
+            """找到类或者包的成员名"""
+            if str_update.find("Attribute :"):
+               attr_list.append(str_update)
+            """更新当前位置"""
+            self.location += 1
+        """从 while 中退出 则此时应该是 扫描到了EndCall"""
+        end_postion =  self.location
+        self.location += 1
+        
+        attr_count = attr_list.count()
+        graph.create(Node("Attr_Count",attr_count))
+        graph.create(Node("Name_Count",name_list.count()))
+        if(attr_count==0):
+            """无多级调用 则可能是类内部调用或者是 调用的独立于类之外的函数"""
+            #graph.create(Node("进入"))
+            function_nodes_in_class = database_helper.find_linked_nodes(father_node)
+            function_name = name_list[0]
+            for node in function_nodes_in_class:
+                if node['Name'] == function_name :
+                    """如果找到对应的节点 则创建关系"""
+                    call_relation = Relationship(father_node,"calls",node)
+                    graph.create(call_relation)
+                    break
 
-        elif function_node is not None and function_Name[7:].find("self")==-1:
-              """如果所调用的函数节点不为空 且名称中不是 self"""
-              """直接创建节点即可"""
-              # graph.create(Node("Success", name = "4" ))
-              entity = Relationship(node, "calls", function_node)
-              graph.create(entity)
+        # else:
+        #     """有多级调用 则可能是 import的包 或者是 类"""
+        #     name = name_list[0]
+        #     class_node = graph.nodes.match("Class",Name=name)
+        #     if class_node is None:
+        #         """说明是文件中的元素"""
+
+        #     else:
+        #         """找到与类节点相连的所有节点"""                
+        #         function_nodes_in_class = database_helper.find_linked_nodes(class_node)
+        #         for node in function_nodes_in_class:
+        #             if(node["Name"]==attr_list[1])
+                
+
+        
 
 
 
