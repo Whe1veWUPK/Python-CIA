@@ -1,5 +1,4 @@
 import os
-
 """存放所有.py 文件路径的列表"""
 py_files=[]
 
