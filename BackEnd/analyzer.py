@@ -55,7 +55,7 @@ class analyzer:
         target_node = graph.nodes.match("Function",Path=self.file_path,Name=self.node_name,StartLine=self.start_line).first()
         """如果删除的是函数节点"""
         if target_node is not None:
-            print ("是函数节点")
+            #print ("是函数节点")
             """获取所有调用该函数的节点"""
             call_relations = list(relation_matcher.match((None,target_node),r_type='calls'))
             for relation in call_relations:
