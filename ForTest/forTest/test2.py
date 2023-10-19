@@ -10,7 +10,8 @@ def justForTest(name):
     print(name)
 def justForTest2():
     print("Hello")
-
+def add():
+    print("Add")
 def test1():
     test.test11()
     justForTest("name");

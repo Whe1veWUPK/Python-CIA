@@ -43,10 +43,14 @@ def get_text_lines(filename):
 
 def get_lines(filename):
     """给定文件路径，读取文件中所有行的函数"""
+    print("in get_lines")
     f = open(filename,'r')
+    print("open file successfully")
     line = f.readline()
+    print(line)
     lines =[]
     while line:
+        print(line)
         line = line.strip('\n')
         lines.append(line)
         line=f.readline()

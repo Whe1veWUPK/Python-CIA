@@ -1,72 +1,70 @@
-d:\PythonProjects\Python-CIA\ForTest\test1.py
+D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py
 Module
-ImportFrom : forTest
-Alias : test2
-ClassDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test StartLine: 2 EndLine: 6
-FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py __init__ StartLine: 3 EndLine: 4
+ClassDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test StartLine: 1 EndLine: 5
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py __init__ StartLine: 2 EndLine: 3
 arguments :
 arg : self
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 4 EndLine: 4
-Constant : hello
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 3 EndLine: 3
+Constant :
 EndCall :
-Constant : None
+Constant :
 EndFunction :
-FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test11 StartLine: 5 EndLine: 6
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test11 StartLine: 4 EndLine: 5
 arguments :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 6 EndLine: 6
-Constant : hello
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 5 EndLine: 5
+Constant :
 EndCall :
 EndFunction :
 EndClass :
-FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest StartLine: 10 EndLine: 11
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest StartLine: 9 EndLine: 10
 arguments :
 arg : name
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 11 EndLine: 11
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py name StartLine: 11 EndLine: 11
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 10 EndLine: 10
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py name StartLine: 10 EndLine: 10
 EndCall :
 EndFunction :
-FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest2 StartLine: 13 EndLine: 14
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest2 StartLine: 11 EndLine: 12
 arguments :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 14 EndLine: 14
-Constant : Hello
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 12 EndLine: 12
+Constant :
 EndCall :
 EndFunction :
-FunctionDef : d:\PythonProjects\Python-CIA\ForTest\test1.py test1 StartLine: 16 EndLine: 21
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py add StartLine: 13 EndLine: 14
 arguments :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py test StartLine: 17 EndLine: 17
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 14 EndLine: 14
+Constant :
+EndCall :
+EndFunction :
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test1 StartLine: 15 EndLine: 19
+arguments :
+Expr :
+Call :
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test StartLine: 16 EndLine: 16
 Load :
 Attribute : test11
 EndCall :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest StartLine: 18 EndLine: 18
-Constant : name
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest StartLine: 17 EndLine: 17
+Constant :
 EndCall :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py print StartLine: 19 EndLine: 19
-Constant : test
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 18 EndLine: 18
+Constant :
 EndCall :
 Expr :
 Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py justForTest2 StartLine: 20 EndLine: 20
-EndCall :
-Expr :
-Call :
-Name : d:\PythonProjects\Python-CIA\ForTest\test1.py test2 StartLine: 21 EndLine: 21
-Load :
-Attribute : test
-Load :
-Attribute : test11
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest2 StartLine: 19 EndLine: 19
 EndCall :
 EndFunction :

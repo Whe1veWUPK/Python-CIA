@@ -58,7 +58,7 @@ class my_visitor(ast.NodeVisitor):
         print('Name : '+self.filepath+" "+node.id+" StartLine: " + str(node.lineno) + " EndLine: " + str(node.end_lineno))
 
     def visit_Constant(self, node):
-        print("Constant :", node.value)
+        print("Constant :")
 
     def visit_JoinedStr(self, node):
         print("JoinedStr :")
