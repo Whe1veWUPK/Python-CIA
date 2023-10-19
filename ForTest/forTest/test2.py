@@ -3,17 +3,22 @@ class test:
         print("hello")        
     def test11():
         print("hello")
+class addClass1:
+    def addc1f1():
+        print("hello")
+    def addc1f2():
+        print("hello")
 
-
-
+def finaladd1():
+    print("FinalAdd1")
 def justForTest(name):
     print(name)
 def justForTest2():
     print("Hello")
-def add():
-    print("Add")
-def test1():
-    test.test11()
-    justForTest("name");
-    print("test")
-    justForTest2()
+def finaladd2():
+    print("FinallAdd2")
+class addClass2:
+    def addc2f1():
+        print("hello")
+    def addc2f2():
+        print("hello")

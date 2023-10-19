@@ -43,17 +43,18 @@ def get_text_lines(filename):
 
 def get_lines(filename):
     """给定文件路径，读取文件中所有行的函数"""
-    print("in get_lines")
+    #print("in get_lines")
     f = open(filename,'r')
-    print("open file successfully")
+    # print("open file successfully")
     line = f.readline()
-    print(line)
+    #print(line)
     lines =[]
     while line:
-        print(line)
+        # print(line)
         line = line.strip('\n')
         lines.append(line)
         line=f.readline()
+    # print(len(lines))
     return lines
 
 def get_line(filename, line_num):
@@ -102,9 +103,9 @@ class my_scanner:
            """是第一轮 则建立节点"""
            """首先向数据库中建立 文件节点"""
            self.location = 0
-           file_node = graph.nodes.match("File",Path=self.lines[self.location]).first()
+           file_node = graph.nodes.match("File",Path=self.lines[self.location],StartLine=0).first()
            if file_node is None:
-             file_node=Node("File",Path = self.lines[self.location])
+             file_node=Node("File",Path = self.lines[self.location],StartLine = 0)
              graph.create(file_node)
            self.location += 1
            """第一轮 建立节点(包括 函数 类)"""
@@ -120,7 +121,7 @@ class my_scanner:
         elif self.round==2:
            """是第二轮 则建立节点之间的关系"""
            self.location = 0 
-           file_node = graph.nodes.match("File",Path=self.lines[self.location]).first()
+           file_node = graph.nodes.match("File",Path=self.lines[self.location],StartLine=0).first()
            self.location = 1
        
            """第二轮 建立节点之间的关系"""
@@ -177,18 +178,12 @@ class my_scanner:
              father_info = father_class[7:]
              father_Info_List = father_info.split(' ')
              father_node = graph.nodes.match("Class",Name=father_Info_List[1]).first()
-             if father_node is None:
-                 """如果 父类节点 还没有建立 则先在数据库中进行建立"""
-                 father_node = Node("Class",Path = "",Name = father_Info_List[1],StartLine = "",EndLine = "")
-                 graph.create(father_node)
+
              son_node = graph.nodes.match("Class",Path=info_List[0],Name=info_List[1],StartLine=info_List[3],EndLine=info_List[5]).first()
-             if son_node is None:
-                 """如果 子类节点 还没有建立 则先在数据库中进行建立"""
-                 son_node = Node("Class", Path = info_List[0], Name = info_List[1], StartLine = info_List[3], EndLine = info_List[5])
-                 graph.create(son_node)
-             """建立子类 和 父类节点之间的关系"""
-             entity = Relationship(father_node,"derives",son_node)
-             graph.create(entity)
+             if father_node is not None and son_node is not None:
+               """建立子类 和 父类节点之间的关系"""
+               entity = Relationship(father_node,"derives",son_node)
+               graph.create(entity)
 
         if string[0:10]=="ClassDef :":
             if type(node) != type("a"):

@@ -20,51 +20,72 @@ Constant :
 EndCall :
 EndFunction :
 EndClass :
-FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest StartLine: 9 EndLine: 10
+ClassDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addClass1 StartLine: 6 EndLine: 10
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addc1f1 StartLine: 7 EndLine: 8
+arguments :
+Expr :
+Call :
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 8 EndLine: 8
+Constant :
+EndCall :
+EndFunction :
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addc1f2 StartLine: 9 EndLine: 10
+arguments :
+Expr :
+Call :
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 10 EndLine: 10
+Constant :
+EndCall :
+EndFunction :
+EndClass :
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py finaladd1 StartLine: 12 EndLine: 13
+arguments :
+Expr :
+Call :
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 13 EndLine: 13
+Constant :
+EndCall :
+EndFunction :
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest StartLine: 14 EndLine: 15
 arguments :
 arg : name
 Expr :
 Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 10 EndLine: 10
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py name StartLine: 10 EndLine: 10
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 15 EndLine: 15
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py name StartLine: 15 EndLine: 15
 EndCall :
 EndFunction :
-FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest2 StartLine: 11 EndLine: 12
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest2 StartLine: 16 EndLine: 17
 arguments :
 Expr :
 Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 12 EndLine: 12
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 17 EndLine: 17
 Constant :
 EndCall :
 EndFunction :
-FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py add StartLine: 13 EndLine: 14
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py finaladd2 StartLine: 18 EndLine: 19
 arguments :
 Expr :
 Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 14 EndLine: 14
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 19 EndLine: 19
 Constant :
 EndCall :
 EndFunction :
-FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test1 StartLine: 15 EndLine: 19
+ClassDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addClass2 StartLine: 20 EndLine: 24
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addc2f1 StartLine: 21 EndLine: 22
 arguments :
 Expr :
 Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py test StartLine: 16 EndLine: 16
-Load :
-Attribute : test11
-EndCall :
-Expr :
-Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest StartLine: 17 EndLine: 17
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 22 EndLine: 22
 Constant :
-EndCall :
-Expr :
-Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 18 EndLine: 18
-Constant :
-EndCall :
-Expr :
-Call :
-Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py justForTest2 StartLine: 19 EndLine: 19
 EndCall :
 EndFunction :
+FunctionDef : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py addc2f2 StartLine: 23 EndLine: 24
+arguments :
+Expr :
+Call :
+Name : D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py print StartLine: 24 EndLine: 24
+Constant :
+EndCall :
+EndFunction :
+EndClass :
