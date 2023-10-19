@@ -285,6 +285,8 @@ class analyzer:
         for node in new_nodes:
             """每个新添加的节点都是影响集"""
             impact_set.append(node)
+        """影响集去重"""
+        impact_set= list(set(impact_set))
         """结束程序"""
         return
         
