@@ -55,6 +55,7 @@ def get_lines(filename):
         lines.append(line)
         line=f.readline()
     # print(len(lines))
+    f.close()
     return lines
 
 def get_line(filename, line_num):

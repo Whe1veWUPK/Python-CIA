@@ -7,6 +7,7 @@ def get_py(dirpath):
     fileList = os.listdir(dirpath)  # 获取path目录下所有文件
     for filename in fileList:
         pathTmp = os.path.join(dirpath, filename)  # 获取path与filename组合后的路径
+        pathTmp = os.path.normpath(pathTmp)
         if os.path.isdir(pathTmp):  # 如果是目录
             get_py(pathTmp)  # 则递归查找
         elif filename[-3:].upper() == '.PY':  # 如果不是目录，则比较后缀名

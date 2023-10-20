@@ -11,8 +11,57 @@ impact_set = []
 """获得开始行并将其转化为 int 类型的数据"""
 def get_start_line(node):
     return int(node['StartLine'])
+"""单独为modify设立的"""
+def for_modify(lines):
+ 
+    #print(len(lines))
+    for line in lines:
+        #print(line)
+        info_list = []
+        #print("in")
+        if line[0:13]=="FunctionDef :":
+           # print("In func")
+            info_list = line[14:].split(' ')
+            node = graph.nodes.match("Function").where(Name=info_list[1],Path=info_list[0]).first()
+            flag = 0
+            if node in impact_set:
+                impact_set.remove(node)
+                flag = 1 
+            #print("Success Matched")
+            """更新开始行以及结束行"""
+            update_data={
+                'StartLine': info_list[3],                                        
+                'EndLine': info_list[5] 
+            }
+            node.update(update_data)
+            """更新到图里"""
+            graph.push(node)  
+            if flag == 1:
+               impact_set.append(node)          
+        if line[0:10]=="ClassDef :":
+            #print("in class")
 
-
+            info_list = line[11:].split(' ')
+            node=graph.nodes.match("Class").where(Path=info_list[0],Name=info_list[1]).first()
+            #print("success matched")
+            flag = 0
+            if node in impact_set:
+                impact_set.remove(node)
+                flag = 1 
+            """更新开始行以及结束行"""
+            update_data={
+                'StartLine': info_list[3],                                        
+                'EndLine': info_list[5] 
+            }
+            node.update(update_data)
+            """更新到图里"""
+            graph.push(node)
+            if flag == 1:
+                impact_set.append(node)
+            
+            
+                
+     
 """为增添修改设计所做的特殊的更新依赖图的函数 同时记录新添加的节点后进行返回"""
 def update_graph(lines,target_index,nodes):
     """越过初始的文件节点 从下一个类或者函数节点开始"""
@@ -33,6 +82,7 @@ def update_graph(lines,target_index,nodes):
             if line[0:10]=="ClassDef :":
                 info_list = line[11:].split(' ')
                 node=graph.nodes.match("Class").where(Path=info_list[0],Name=info_list[1],StartLine=info_list[3],EndLine=info_list[5]).first()
+                
                 if node is None:
                     """节点为空 则说明是新节点"""
                     new_nodes.append(Node("Class",Path=info_list[0],Name=info_list[1],StartLine=info_list[3],EndLine=info_list[5]))
@@ -142,29 +192,27 @@ def get_target_index(nodes,target_index,lines):
     """Location 从1 开始跳过文件路径"""
     limit =len(nodes)
     for line in lines:
-        if target_index>=limit:
+        # print(line)
+        if target_index >= limit:
             return target_index
         node = nodes[target_index]
-
         info_list = []
         if line[0:13]=="FunctionDef :":
- 
            info_list = line[14:].split(' ')
-           if node['StartLine'] == info_list[3]:
+           if node['StartLine'] == info_list[3] and node['Name']==info_list[1] and node['Path']==info_list[0]:
                """匹配 则更新target_index"""
+               #print(node['StartLine'] +"=="+ info_list[3])
                target_index += 1
            else:
-               """不匹配则说明已经找到 直接退出"""
+               #rint(line)
                return target_index
-        elif line[0:10]=="ClassDef :":
-
+        if line[0:10]=="ClassDef :":
            info_list = line[11:].split(' ')
-
-           if node['StartLine']==info_list[3]:
+           if node['StartLine']==info_list[3] and node['Name']==info_list[1] and node['Path']==info_list[0]:
                """匹配 则更新target_index"""
+               #print(node['StartLine'] +"=="+ info_list[3] )
                target_index += 1
            else:
-               """不匹配则说明已经找到 直接退出"""
                return target_index
 
 class analyzer:
@@ -195,7 +243,7 @@ class analyzer:
         """首先查找类节点"""
 
         if target_node is not None:
-
+            
             """如果类节点不为空，将其加入影响集"""
             impact_set.append(target_node)
 
@@ -226,7 +274,8 @@ class analyzer:
         # print(self.file_path+" "+self.node_name+" "+self.start_line)
         """如果删除的是函数节点"""
         if target_node is not None:
-
+            """函数节点不为空 加入影响集"""
+            impact_set.append(target_node)
             """获取所有调用该函数的节点"""
             call_relations = list(relation_matcher.match((None,target_node),r_type='calls'))
             for relation in call_relations:
@@ -236,7 +285,9 @@ class analyzer:
             """获取包含该函数的类节点"""
             includes_relations = list(relation_matcher.match((None,target_node),r_type='includes function'))
             for relation in includes_relations:
-                impact_set.append(relation.start_node)
+                """把文件节点筛选出去"""
+                if relation.start_node['StartLine']!=0:
+                   impact_set.append(relation.start_node)
             """对影响集进行去重处理 先转换为集合 后再次转换为列表"""
             impact_set = list(set(impact_set))
             """查询完成后直接返回"""
@@ -254,7 +305,9 @@ class analyzer:
         
         match_nodes = list(graph.nodes.match().where(Path=self.file_path).all())
         match_nodes.sort(key=get_start_line)
-
+        # print("Matched Nodes: ")
+        # for node in match_nodes:
+        #     print(node)
         """接下来定位出增加的节点位置"""
         """首先重新 构造 ast输入到文件中"""
         f = open('ast.txt', 'w')
@@ -277,10 +330,12 @@ class analyzer:
         
         lines = ast_node_scanner.get_lines(r'ast.txt')
         target_index = get_target_index(match_nodes,target_index,lines)
+        #print("Target Index: "+str(target_index))
         
         """更新图中已经存在节点的信息 同时获取新添加的节点集合"""
+ 
         new_nodes=update_graph(lines,target_index,match_nodes)
-        
+
         """重新构建依赖图"""
         f.close()
         f = open(r'ast.txt','r')
@@ -308,15 +363,42 @@ class analyzer:
         """删修改分析"""
 
         self.delete_analyze()
-        impact_set1=impact_set
-
-        """增修改分析"""
-        self.add_analyze()
-
-        impact_set2=impact_set
-        for node in impact_set2:
-            impact_set1.append(node)
-        impact_set =  list((set(impact_set1)))
+        # for node in impact_set:
+        #     print(node)
+        """接下来是增修改分析"""
+        """接下来定位出增加的节点位置"""
+        """首先重新 构造 ast输入到文件中"""
+        f = open('ast.txt', 'w')
+        f.seek(0)
+        f.truncate()
+         
+        sys.stdout = f
+           
+        tree = astree.ast_constructor(self.file_path)
+        visit = astree.my_visitor(self.file_path)
+        visit.visit(tree)
+        f.close()
+        """获取Ast文件中的所有信息"""
+        sys.stdout=sys.__stdout__
+        f = open(r'ast.txt','r')
+        f.seek(0)
+        
+        f.close()
+        lines = ast_node_scanner.get_lines(r'ast.txt')
+        # for line in lines:
+        #     print(line)
+        # print("开始构建")
+        for_modify(lines)
+        """重新构建依赖图"""
+        
+        f = open(r'ast.txt','r')
+        f.seek(0)
+        ast_node_scanner.graph_constructor(r'ast.txt',1)
+        f.close()
+        f = open(r'ast.txt','r')
+        f.seek(0)
+        ast_node_scanner.graph_constructor(r'ast.txt',2)
+        f.close()
 
 
 
@@ -326,7 +408,8 @@ class analyzer:
 
 
 
-# analy =analyzer("Modify",r"D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py",'4','test11')
+# analy =analyzer("Add",r"D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py",'4','test11')
 # analyzer.analyze(analy)
+
 # for node in impact_set:
 #     print(node)

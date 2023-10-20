@@ -1,7 +1,0 @@
-C:/Users/86920/Desktop/MainWindow.py
-Traceback (most recent call last):
-  File "C:\Users\86920\Desktop\Python-CIA-main\FrontEnd\MainWindow.py", line 288, in openAST
-    tree = astree.ast_constructor(self.lineEdit.text())
-  File "C:\Users\86920\Desktop\Python-CIA-main\BackEnd\astree.py", line 13, in ast_constructor
-    ast_obj = ast.parse(f.read(), mode="exec")
-UnicodeDecodeError: 'gbk' codec can't decode byte 0xae in position 5446: illegal multibyte sequence
