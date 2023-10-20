@@ -13,9 +13,4 @@ def get_py(dirpath):
             py_files.append(pathTmp)
 
 
-# get_py(r'd:\PythonProjects\Python-CIA')
-# for file in py_files:
-#     print(file)
-
-
 

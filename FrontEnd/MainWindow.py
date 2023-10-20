@@ -14,7 +14,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QFileSystemModel
 
-import functions
 import subprocess
 
 import sys, time, os
@@ -23,8 +22,14 @@ tempPath = sys.path[0]
 tempPath = tempPath[:-9]
 
 sys.path[0] = tempPath
-from BackEnd import astree
+from BackEnd import astree, analyzer
 
+selected_directory = " "  # 选取根目录的全局变量
+flag_graphed = False
+
+neo_adr = " "
+neo_acc = " "
+neo_pwd = " "
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -32,6 +37,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1080, 800)
         MainWindow.setMinimumSize(QtCore.QSize(1080, 800))
         MainWindow.setMaximumSize(QtCore.QSize(1080, 800))
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
@@ -42,14 +48,6 @@ class Ui_MainWindow(object):
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
 
-        self.pushButton_add = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_add.setGeometry(QtCore.QRect(800, 30, 51, 31))
-        font = QtGui.QFont()
-        font.setFamily("等线 Light")
-        font.setPointSize(6)
-        self.pushButton_add.setFont(font)
-        self.pushButton_add.setObjectName("pushButton_add")
-
         self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit.setGeometry(QtCore.QRect(230, 30, 521, 31))
         font = QtGui.QFont()
@@ -58,6 +56,7 @@ class Ui_MainWindow(object):
         self.lineEdit.setObjectName("lineEdit")
 
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
+
         self.textEdit.setGeometry(QtCore.QRect(230, 70, 811, 681))
         font = QtGui.QFont()
         font.setFamily("等线")
@@ -72,17 +71,15 @@ class Ui_MainWindow(object):
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
 
-        self.pushButton_2 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_2.setGeometry(QtCore.QRect(50, 580, 131, 41))
         font = QtGui.QFont()
         font.setFamily("等线")
         font.setPointSize(10)
         font.setBold(False)
         font.setWeight(50)
-        self.pushButton_2.setFont(font)
-        self.pushButton_2.setObjectName("pushButton_2")
+
+        # analyzer button
         self.pushButton_4 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_4.setGeometry(QtCore.QRect(50, 670, 131, 41))
+        self.pushButton_4.setGeometry(QtCore.QRect(50, 460, 131, 41))
         font = QtGui.QFont()
         font.setFamily("等线")
         font.setPointSize(10)
@@ -90,8 +87,10 @@ class Ui_MainWindow(object):
         font.setWeight(50)
         self.pushButton_4.setFont(font)
         self.pushButton_4.setObjectName("pushButton_4")
+
+        # settings button (kill)
         self.pushButton_5 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_5.setGeometry(QtCore.QRect(50, 715, 131, 41))
+        self.pushButton_5.setGeometry(QtCore.QRect(50, 505, 131, 41))
         font = QtGui.QFont()
         font.setFamily("等线")
         font.setPointSize(10)
@@ -100,7 +99,7 @@ class Ui_MainWindow(object):
         self.pushButton_5.setFont(font)
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_3 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_3.setGeometry(QtCore.QRect(50, 625, 131, 41))
+        self.pushButton_3.setGeometry(QtCore.QRect(50, 415, 131, 41))
         font = QtGui.QFont()
         font.setFamily("等线")
         font.setPointSize(10)
@@ -136,24 +135,31 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         self.pushButton.clicked.connect(self.openFile)
-        self.pushButton_2.clicked.connect(self.openAST)
+        self.pushButton.clicked.connect(self.indexview)
+
         self.pushButton_3.clicked.connect(self.make_graph)
-        # self.pushButton_4.clicked.connect(self.openAnalyze)
-        # self.pushButton_5.clicked.connect(self.openSettings)
-        subprocess.Popen('neo4j.bat console', shell=True)
+        self.pushButton_4.clicked.connect(self.openAnalyzer)
+        self.pushButton_5.clicked.connect(self.setup_dialog)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "PythonCIA"))
         self.pushButton.setText(_translate("MainWindow", "browse..."))
-        self.pushButton_add.setText(_translate("MainWindow", "add..."))
+
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "current directory..."))
         self.textEdit.setPlaceholderText(_translate("MainWindow", "#import .py files "))
-        self.pushButton_2.setText(_translate("MainWindow", "AST"))
+
         self.pushButton_3.setText(_translate("MainWindow", "Graph"))
         self.pushButton_4.setText(_translate("MainWindow", "Analyze"))
         self.pushButton_5.setText(_translate("MainWindow", "Settings"))
         self.label.setText(_translate("MainWindow", "File Directory"))
+        subprocess.Popen('neo4j.bat console', shell=True)
+
+    def setup_dialog(self):
+        self.setup = QWidget()
+        self.dialog = Ui_neo4jSet()
+        self.dialog.setupUi(self.setup)
+        self.setup.show()
 
     def openFile(self):
         file_dir = QFileDialog.getExistingDirectory()  # 打开filedialog
@@ -163,31 +169,17 @@ class Ui_MainWindow(object):
         else:
             self.lineEdit.setText(file_dir)
 
-            self.model.index(file_dir)
-            # with open(file_dir, 'r', encoding='utf-8', errors='ignore') as f:
-            # data = f.read()
-            # self.textEdit.setText(data)
-
-    def openWeb(self):
-        from BackEnd import ast_node_scanner
-        ast_node_scanner.graph_constructor('output.txt')
-        self.windowMDG = QWidget()
-        self.windowMDG.setWindowTitle("MDG")
-        self.windowMDG.resize(1800, 900)
-        self.windowMDG.setMinimumSize(QtCore.QSize(1080, 800))
-        layoutMDG = QVBoxLayout()
-        web_viewMDG = QWebEngineView()
-        web_viewMDG.load(QUrl("http://localhost:7474"))
-        layoutMDG.addWidget(web_viewMDG)
-        self.windowMDG.setLayout(layoutMDG)
-        self.windowMDG.show()
+        global selected_directory
+        selected_directory = file_dir
+        print(selected_directory)
 
     def make_graph(self):
-
         from BackEnd import file_scanner
-        #dir_path = self.lineEdit.text()
+        dir_path = selected_directory  # 路径
+        print(selected_directory)
         # 找出目录下的所有.py文件
-        file_scanner.get_py(r'D:\PythonProjects\Python-CIA\ForTest')
+        dir_path=dir_path.replace('/','\\')
+        file_scanner.get_py(dir_path)
 
         for file in file_scanner.py_files:
             # 构造ast
@@ -199,19 +191,16 @@ class Ui_MainWindow(object):
             sys.stdout = f
             sys.stderr = f
 
-     
-
             tree = astree.ast_constructor(file)
             visit = astree.my_visitor(file)
             visit.visit(tree)
             f.seek(0)
 
-
             sys.stdout = temp_o
             sys.stderr = temp_e
 
             from BackEnd import ast_node_scanner
-            ast_node_scanner.graph_constructor('ast.txt',1)
+            ast_node_scanner.graph_constructor('ast.txt', 1)
             f.close()
         for file in file_scanner.py_files:
             # 构造ast
@@ -223,20 +212,16 @@ class Ui_MainWindow(object):
             sys.stdout = f
             sys.stderr = f
 
-          
-            
-
             tree = astree.ast_constructor(file)
             visit = astree.my_visitor(file)
             visit.visit(tree)
             f.seek(0)
-            
 
             sys.stdout = temp_o
             sys.stderr = temp_e
 
             from BackEnd import ast_node_scanner
-            ast_node_scanner.graph_constructor('ast.txt',2)
+            ast_node_scanner.graph_constructor('ast.txt', 2)
             f.close()
 
         self.windowMDG = QWidget()
@@ -250,74 +235,27 @@ class Ui_MainWindow(object):
         self.windowMDG.setLayout(layoutMDG)
         self.windowMDG.show()
 
-    def openAST(self):
+    def openAnalyzer(self):
+        self.setup = QWidget()
+        self.window = Ui_analyzeWindow()
+        self.window.setupUi(self.setup)
+        self.setup.show()
 
-        self.windowAST = QWidget()
-        self.windowAST.setWindowTitle("AST")
-        layoutAST = QVBoxLayout()
-        self.windowAST.resize(1080, 800)
-        self.windowAST.setMinimumSize(QtCore.QSize(1080, 800))
-        self.windowAST.setMaximumSize(QtCore.QSize(1080, 800))
-        Textedit = QTextEdit()
-        layoutAST.addWidget(Textedit)
-        Textedit.setGeometry(QtCore.QRect(100, 70, 811, 681))
-        font = QtGui.QFont()
-        font.setFamily("等线")
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setWeight(50)
-        Textedit.setFont(font)
-        Textedit.setObjectName("textEdit")
-        Textedit.setLineWrapMode(QTextEdit.NoWrap)
-
-        self.windowAST.setLayout(layoutAST)
-        self.windowAST.show()
-
-        f = open('output.txt', 'a')
-        f.seek(0)
-        f.truncate()
-        temp_o = sys.stdout
-        temp_e = sys.stderr
-        sys.stdout = f
-        sys.stderr = f
-
-        if self.lineEdit.text() == "":
-            return
-        else:
-
-            tree = astree.ast_constructor(self.lineEdit.text())
-            visit = astree.my_visitor()
-            visit.visit(tree)
-
-            f.seek(0)
-            with open("output.txt", 'r', encoding='utf-8', errors='ignore') as f:
-                ast_show = f.read()
-            Textedit.setText(ast_show)
-
-        sys.stdout = temp_o
-        sys.stderr = temp_e
-
-    # 边栏文件浏览setup
-    def indexview(self):
+    def indexview(self):  # 边栏文件浏览setup
         self.model = QFileSystemModel()
         self.treeView.setModel(self.model)
 
         self.treeView.setColumnHidden(1, True)
         self.treeView.setColumnHidden(2, True)
         self.treeView.setColumnHidden(3, True)
-        # 设置根目录位置
-        get_root_index = "C:/Users/86920/Desktop"
+
+        get_root_index = self.lineEdit.text()
         root_index = self.model.setRootPath(get_root_index)
         self.treeView.setRootIndex(root_index)
         self.treeView.setItemsExpandable(True)
         self.treeView.clicked.connect(self.openfile)
 
-        '''
-        connect()中填写browse相同的槽函数
-        '''
-        # 需要默认展开的文件位置
-        filepath = "C:/Users/86920/Desktop"
-        # filepath = self.lineEdit.text()
+        filepath = self.lineEdit.text()
         file_info = self.model.index(filepath)
         while file_info.isValid():
             self.treeView.setExpanded(file_info, True)
@@ -327,11 +265,168 @@ class Ui_MainWindow(object):
         # 获取所选文件的路径
         file_dir = self.model.filePath(index)
         self.lineEdit.setText(file_dir)  # 将点击的目录显示在line上
-        # with open(file_dir, 'r', encoding='utf-8', errors='ignore') as f:
-        # data = f.read()
-        # self.textEdit.setText(data)
+        with open(file_dir, 'r', encoding='utf-8', errors='ignore') as f:
+            data = f.read()
+        self.textEdit.setText(data)
 
     # 主文件窗口复合（取代原先的textEdit）
 
-    def ex_test(self):
-        print("ffffffff")
+class Ui_neo4jSet(object):
+    def setupUi(self, neo4jSet):
+        neo4jSet.setObjectName("neo4jSet")
+        neo4jSet.resize(426, 311)
+        font = QtGui.QFont()
+        font.setFamily("等线")
+        font.setPointSize(10)
+        font.setBold(False)
+        font.setWeight(50)
+        self.okButton = QtWidgets.QPushButton(neo4jSet)
+        self.okButton.setGeometry(QtCore.QRect(80, 230, 93, 28))
+        self.okButton.setObjectName("okButton")
+        self.okButton.setFont(font)
+        self.cancelButton = QtWidgets.QPushButton(neo4jSet)
+        self.cancelButton.setGeometry(QtCore.QRect(250, 230, 93, 28))
+        self.cancelButton.setObjectName("cancelButton")
+        self.cancelButton.setFont(font)
+        self.addressLineEdit = QtWidgets.QLineEdit(neo4jSet)
+        self.addressLineEdit.setGeometry(QtCore.QRect(80, 30, 261, 31))
+        self.addressLineEdit.setObjectName("addressLineEdit")
+        self.addressLineEdit.setFont(font)
+        self.label = QtWidgets.QLabel(neo4jSet)
+        self.label.setGeometry(QtCore.QRect(80, 10, 261, 16))
+        self.label.setObjectName("label")
+        self.label.setFont(font)
+        self.label_2 = QtWidgets.QLabel(neo4jSet)
+        self.label_2.setGeometry(QtCore.QRect(80, 70, 261, 16))
+        self.label_2.setObjectName("label_2")
+        self.label_2.setFont(font)
+        self.label_3 = QtWidgets.QLabel(neo4jSet)
+        self.label_3.setGeometry(QtCore.QRect(80, 140, 261, 16))
+        self.label_3.setObjectName("label_3")
+        self.label_3.setFont(font)
+        self.nameLineEdit = QtWidgets.QLineEdit(neo4jSet)
+        self.nameLineEdit.setGeometry(QtCore.QRect(80, 100, 261, 31))
+        self.nameLineEdit.setObjectName("nameLineEdit")
+        self.nameLineEdit.setFont(font)
+        self.passwordLineEdit = QtWidgets.QLineEdit(neo4jSet)
+        self.passwordLineEdit.setGeometry(QtCore.QRect(80, 170, 261, 31))
+        self.passwordLineEdit.setObjectName("passwordLineEdit")
+        self.passwordLineEdit.setFont(font)
+
+        self.retranslateUi(neo4jSet)
+        QtCore.QMetaObject.connectSlotsByName(neo4jSet)
+
+        #添加槽函数
+        self.okButton.clicked.connect(self.okButtonfunc)
+        self.cancelButton.clicked.connect(self.quitWindow)
+
+
+
+    def retranslateUi(self, neo4jSet):
+        _translate = QtCore.QCoreApplication.translate
+        neo4jSet.setWindowTitle(_translate("neo4jSet", "Dialog"))
+        self.okButton.setText(_translate("neo4jSet", "OK"))
+        self.cancelButton.setText(_translate("neo4jSet", "Cancel"))
+        self.label.setText(_translate("neo4jSet", "Input your neo4j server address："))
+        self.label_2.setText(_translate("neo4jSet", "Input your neo4j user name："))
+        self.label_3.setText(_translate("neo4jSet", "Input your neo4j user password："))
+
+    def okButtonfunc(self):
+        ''' 下面三个变量分别为地址，用户，密码'''
+        global neo_adr, neo_acc, neo_pwd
+        neo_adr = self.addressLineEdit.text()
+        neo_acc = self.nameLineEdit.text()
+        neo_pwd = self.passwordLineEdit.text()
+
+        neo4jSet = self.okButton.window()
+        if neo4jSet is not None:
+            neo4jSet.close()
+
+    def quitWindow(self):
+        neo4jSet = self.cancelButton.window()
+        if neo4jSet is not None:
+            neo4jSet.close()
+
+
+
+class Ui_analyzeWindow(object):
+    def setupUi(self, analyzeWindow):
+        analyzeWindow.setObjectName("analyzeWindow")
+        analyzeWindow.resize(1042, 632)
+        analyzeWindow.setMinimumSize(QtCore.QSize(1042, 632))
+        analyzeWindow.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        analyzeWindow.setAutoFillBackground(False)
+        self.left = QtWidgets.QWidget(analyzeWindow)
+        self.left.setGeometry(QtCore.QRect(20, 20, 211, 591))
+        self.left.setObjectName("left")
+        self.treeView = QtWidgets.QTreeView(self.left)
+        self.treeView.setGeometry(QtCore.QRect(10, 320, 191, 261))
+        self.treeView.setObjectName("treeView")
+        self.engage = QtWidgets.QPushButton(self.left)
+        self.engage.setGeometry(QtCore.QRect(10, 260, 191, 41))
+        self.engage.setObjectName("engage")
+        self.textEdit = QtWidgets.QTextEdit(self.left)
+        self.textEdit.setGeometry(QtCore.QRect(10, 30, 191, 121))
+        self.textEdit.setObjectName("textEdit")
+        self.add = QtWidgets.QRadioButton(self.left)
+        self.add.setGeometry(QtCore.QRect(20, 166, 117, 21))
+        self.add.setObjectName("add")
+        self.buttonGroup = QtWidgets.QButtonGroup(analyzeWindow)
+        self.buttonGroup.setObjectName("buttonGroup")
+        self.buttonGroup.addButton(self.add)
+        self.edit = QtWidgets.QRadioButton(self.left)
+        self.edit.setGeometry(QtCore.QRect(20, 196, 117, 21))
+        self.edit.setObjectName("edit")
+        self.buttonGroup.addButton(self.edit)
+        self.dele = QtWidgets.QRadioButton(self.left)
+        self.dele.setGeometry(QtCore.QRect(20, 226, 117, 21))
+        self.dele.setObjectName("del")
+        self.buttonGroup.addButton(self.dele)
+        self.right = QtWidgets.QWidget(analyzeWindow)
+        self.right.setGeometry(QtCore.QRect(240, 20, 781, 591))
+        self.right.setObjectName("right")
+        self.tabWidget = QtWidgets.QTabWidget(self.right)
+        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 781, 591))
+        self.tabWidget.setObjectName("tabWidget")
+        self.tabWidget.clear()
+        self.retranslateUi(analyzeWindow)
+        self.tabWidget.setCurrentIndex(0)
+        QtCore.QMetaObject.connectSlotsByName(analyzeWindow)
+        self.open_py()
+
+    def retranslateUi(self, analyzeWindow):
+        _translate = QtCore.QCoreApplication.translate
+        analyzeWindow.setWindowTitle(_translate("analyzeWindow", "Form"))
+        self.engage.setText(_translate("analyzeWindow", "PushButton"))
+        self.add.setText(_translate("analyzeWindow", "ADD"))
+        self.edit.setText(_translate("analyzeWindow", "EDIT"))
+        self.dele.setText(_translate("analyzeWindow", "DELETE"))
+
+    def open_py(self):
+        from BackEnd import file_scanner
+        file_scanner.py_files = []
+        dir_path = selected_directory  # 路径
+        dir_path = dir_path.replace('/','\\')
+
+        
+        # 找出目录下的所有.py文件
+        file_scanner.get_py(dir_path)
+
+      
+        for file in file_scanner.py_files:
+            dirStr, ext = os.path.splitext(file)
+            name = dirStr.split("\\")[-1]
+
+            self.textedit = QtWidgets.QTextEdit(self.tabWidget)
+            self.textedit.setGeometry(QtCore.QRect(10, 10, 761, 541))
+
+            self.tabWidget.addTab(self.textedit, name)
+            with open(file, 'r', encoding='utf-8', errors='ignore') as f:
+                data = f.read()
+            self.textedit.setText(data)
+
+
+
+
+
+

@@ -16,6 +16,8 @@ def get_start_line(node):
 """为增添修改设计所做的特殊的更新依赖图的函数 同时记录新添加的节点后进行返回"""
 def update_graph(lines,target_index,nodes):
     """越过初始的文件节点 从下一个类或者函数节点开始"""
+    if len(nodes)== 0:
+        return 
     location = 1
     new_nodes=[]
     if target_index== len(nodes):
@@ -179,13 +181,17 @@ class analyzer:
             self.delete_analyze()
         elif self.type == "Add":
             """增加类型的修改影响分析"""
-            self.add_analyze()    
+            self.add_analyze()   
+        elif self.type == "Modify":
+           """修改类型的修改影响分析"""
+           self.modify_analyze()
     
     def delete_analyze(self):
         global impact_set
         """清空影响集"""
         impact_set.clear()
         target_node = graph.nodes.match("Class",Path=self.file_path,Name=self.node_name,StartLine=self.start_line).first()
+        
         """首先查找类节点"""
 
         if target_node is not None:
@@ -214,6 +220,10 @@ class analyzer:
             return 
         """类节点为空 则我们接下来在函数节点里搜索"""
         target_node = graph.nodes.match("Function",Path=self.file_path,Name=self.node_name,StartLine=self.start_line).first()
+
+        # for node in nodes:
+        #     print(node)
+        # print(self.file_path+" "+self.node_name+" "+self.start_line)
         """如果删除的是函数节点"""
         if target_node is not None:
 
@@ -289,7 +299,24 @@ class analyzer:
         impact_set= list(set(impact_set))
         """结束程序"""
         return
-        
+    def modify_analyze(self):
+        """修改类型的影响集计算"""
+        """实际上就是先 删 后 增"""
+        global impact_set
+        """清空影响集"""
+        impact_set.clear()
+        """删修改分析"""
+
+        self.delete_analyze()
+        impact_set1=impact_set
+
+        """增修改分析"""
+        self.add_analyze()
+
+        impact_set2=impact_set
+        for node in impact_set2:
+            impact_set1.append(node)
+        impact_set =  list((set(impact_set1)))
 
 
 
@@ -299,8 +326,7 @@ class analyzer:
 
 
 
-# analy =analyzer("Add",r'D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py','4','test11')
+# analy =analyzer("Modify",r"D:\PythonProjects\Python-CIA\ForTest\forTest\test2.py",'4','test11')
 # analyzer.analyze(analy)
-
 # for node in impact_set:
 #     print(node)
