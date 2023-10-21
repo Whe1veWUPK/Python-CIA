@@ -3,7 +3,7 @@
 from py2neo import Graph, Node, Relationship, NodeMatcher,RelationshipMatcher
 import os
 import os.path
-
+from FrontEnd import MainWindow
 '''
 用于搜索生成的节点信息文件
 向neo4j中建立节点
@@ -11,9 +11,10 @@ import os.path
 同时建立各个等级节点之间的调用情况
 '''
 
-graph = Graph('bolt://localhost:7687', auth=('neo4j', '12345678'))
+graph = Graph(MainWindow.neo_adr, auth=(MainWindow.neo_acc, MainWindow.neo_pwd))
 node_matcher = NodeMatcher(graph)
 relation_matcher = RelationshipMatcher(graph)
+print('start astr')
 
 """获取与某节点有关系的所有节点（一层）"""
 def find_linked_nodes(node):

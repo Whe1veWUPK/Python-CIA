@@ -2,8 +2,10 @@ from py2neo import Graph, Node, Relationship, NodeMatcher,RelationshipMatcher
 import astree
 import sys
 import ast_node_scanner
-graph = Graph('bolt://localhost:7687', auth=('neo4j', '12345678'))
+from FrontEnd import MainWindow
+graph = Graph(MainWindow.neo_adr, auth=(MainWindow.neo_acc, MainWindow.neo_pwd))
 node_matcher = NodeMatcher(graph)
+print('start anal')
 relation_matcher = RelationshipMatcher(graph)
 """影响集，里面存储的是影响到的节点的集合"""
 impact_set = []
