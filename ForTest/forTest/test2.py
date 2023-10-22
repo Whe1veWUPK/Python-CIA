@@ -6,6 +6,7 @@ class test:
         print("6")
         print("逆天")
         print("6")
+        test111()
     def test111():
         print("add")
     def finaladd():
@@ -27,7 +28,6 @@ class test:
 class addClass2:
      def  addc2f1():
         print("c2f1")
-        """"""
         print("c2f1")
 class addClass3:
      def  addc3f1():
@@ -43,6 +43,8 @@ def func1():
     print("333")
     print("1")
     print("1")
+def func2():
+    func1()
 class ac1:
     def c1f1():
        print("111")

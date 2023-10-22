@@ -6,7 +6,6 @@ class test:
         print("hello")
 
 
-
 def justForTest(name):
     print(name)
     
