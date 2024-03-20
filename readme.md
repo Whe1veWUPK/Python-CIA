@@ -4,6 +4,7 @@
 
   [huffb](https://github.com/huffb)$\quad$ [m1zukiL](https://github.com/m1zukiL)$\quad$ [Whe1ve](https://github.com/Whe1veWUPK) $\quad$ [Xavoric](https://github.com/Xavoric) $\quad$ [zywooooo1](https://github.com/zywooooo1)
 # 环境配置需求
+* [neo4j数据库](https://neo4j.com/)
 * python 3.x 
 * 一些需要下载的拓展包: ast, astpretty, py2neo,pyqt等
 # 项目简介
