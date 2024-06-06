@@ -5,7 +5,7 @@ class test:
         print("hello")
         print("6")
         print("逆天")
-        print("6")
+        print("666")
         test111()
     def test111():
         print("add")
